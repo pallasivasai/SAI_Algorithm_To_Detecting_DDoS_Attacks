@@ -1,5 +1,6 @@
 # SAI Algorithm — DDoS Detection 
 
+
 *A lightweight, high-accuracy algorithm to detect real DDoS attacks using repeated time-gap patterns between packets.*
 
 Live notebook: [https://colab.research.google.com/drive/1W6Cgkg5j_ZdeQ7UbE_NLP81VeiIA6B3v?usp=sharing](https://colab.research.google.com/drive/1W6Cgkg5j_ZdeQ7UbE_NLP81VeiIA6B3v?usp=sharing)
