@@ -1,0 +1,113 @@
+name: Fix SAI GitHub Dataset Loader
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  patch-loader:
+    if: ${{ !contains(github.event.head_commit.message, '[skip-sai-fix]') }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Patch app.py
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          path = Path('app.py')
+          text = path.read_text(encoding='utf-8')
+
+          # 1) Always know the committed dataset path.
+          if 'GITHUB_PRIMARY_CSV' not in text:
+              text = text.replace(
+                  'GITHUB_BRANCH = "main"\n\n',
+                  'GITHUB_BRANCH = "main"\n\nGITHUB_PRIMARY_CSV = "1. APA-DDoS-Dataset.csv"\n\n',
+                  1,
+              )
+
+          # 2) Make GitHub discovery resilient to API/rate-limit failures.
+          pattern = r'@st\.cache_data\(ttl=300\)\ndef find_github_csv_files\(\):.*?(?=\n\n# ={5,}\n# DOWNLOAD CSV)'
+          replacement = '''@st.cache_data(ttl=300)
+          def find_github_csv_files():
+              try:
+                  response = requests.get(
+                      GITHUB_TREE_URL,
+                      timeout=30,
+                      headers={
+                          "Accept": "application/vnd.github+json",
+                          "User-Agent": "SAI-DDoS-Research-App",
+                      },
+                  )
+
+                  if response.status_code != 200:
+                      return [GITHUB_PRIMARY_CSV]
+
+                  data = response.json()
+                  csv_files = []
+
+                  for item in data.get("tree", []):
+                      item_path = item.get("path", "")
+                      if item.get("type") == "blob" and item_path.lower().endswith(".csv"):
+                          csv_files.append(item_path)
+
+                  if GITHUB_PRIMARY_CSV not in csv_files:
+                      csv_files.insert(0, GITHUB_PRIMARY_CSV)
+
+                  return csv_files
+
+              except Exception:
+                  return [GITHUB_PRIMARY_CSV]
+'''
+          replacement = replacement.replace('          ', '    ')
+          text, count = re.subn(pattern, replacement.rstrip(), text, count=1, flags=re.S)
+
+          # 3) URL-encode the filename because it contains spaces.
+          if 'from urllib.parse import quote' not in text:
+              text = text.replace(
+                  'def download_github_csv(path):\n\n',
+                  'def download_github_csv(path):\n    from urllib.parse import quote\n\n',
+                  1,
+              )
+          text = text.replace(
+              'GITHUB_RAW_BASE\n        + path',
+              'GITHUB_RAW_BASE\n        + quote(path, safe="/")',
+              1,
+          )
+
+          # 4) Make the known CSV the first/default dropdown option.
+          text = text.replace(
+              'dataset_options = [\n        "Sample Data (Default)"\n    ]',
+              'dataset_options = [GITHUB_PRIMARY_CSV]',
+              1,
+          )
+
+          if 'if using_demo and "Sample Data (Default)" not in dataset_options:' not in text:
+              marker = '    dataset_choice = st.selectbox(\n'
+              insert = '    if using_demo and "Sample Data (Default)" not in dataset_options:\n        dataset_options.append("Sample Data (Default)")\n\n'
+              text = text.replace(marker, insert + marker, 1)
+
+          path.write_text(text, encoding='utf-8')
+          print('Patched app.py; discovery function replaced:', count)
+          PY
+
+      - name: Validate Python
+        run: python -m py_compile app.py
+
+      - name: Commit patched app
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app.py
+          if git diff --cached --quiet; then
+            echo "No app.py changes required."
+          else
+            git commit -m "Fix SAI CSV dropdown and loader [skip-sai-fix]"
+            git push
+          fi
