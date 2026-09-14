@@ -5,6 +5,7 @@ import requests
 import time
 import json
 import re
+import html
 
 from io import BytesIO, StringIO
 from textwrap import dedent
@@ -50,17 +51,15 @@ GITHUB_RAW_BASE = (
 
 # ============================================================
 # HTML RENDERER
-# THIS IS THE IMPORTANT FIX
 # ============================================================
 
 def render_html(content):
     """
-    Render HTML directly.
+    Render custom HTML directly.
 
     IMPORTANT:
-    Do NOT use st.markdown() for our custom HTML.
-    st.html() prevents <div>, <style>, etc. from
-    appearing as source code on the screen.
+    st.html() is used instead of st.markdown()
+    for custom HTML/CSS.
     """
 
     st.html(
@@ -85,7 +84,6 @@ render_html(
     }
 
     .stApp {
-
         background:
             radial-gradient(
                 circle at 60% 0%,
@@ -108,22 +106,18 @@ render_html(
     }
 
     .block-container {
-
         max-width: 100%;
-
         padding-top: 1rem;
         padding-bottom: .5rem;
         padding-left: 1rem;
         padding-right: 1rem;
     }
 
-
     /* ========================================================
        SIDEBAR
        ======================================================== */
 
     section[data-testid="stSidebar"] {
-
         background:
             linear-gradient(
                 180deg,
@@ -138,29 +132,18 @@ render_html(
     }
 
     section[data-testid="stSidebar"] > div {
-
         padding-top: .6rem;
     }
 
     .sidebar-logo {
-
         text-align: center;
-
-        padding:
-            5px
-            5px
-            18px
-            5px;
+        padding: 5px 5px 18px 5px;
     }
 
     .infinity-logo {
-
         font-size: 58px;
-
         line-height: 1;
-
         font-weight: 800;
-
         color: #30aaff;
 
         text-shadow:
@@ -169,44 +152,27 @@ render_html(
     }
 
     .sidebar-title {
-
         color: #f0f6ff;
-
         font-size: 19px;
-
         font-weight: 700;
-
         margin-top: 7px;
     }
 
     .sidebar-subtitle {
-
         color: #9eb2cf;
-
         font-size: 12px;
-
         margin-top: 3px;
     }
 
     .nav-item {
-
-        padding:
-            10px
-            12px;
-
-        margin:
-            3px
-            0;
-
+        padding: 10px 12px;
+        margin: 3px 0;
         border-radius: 9px;
-
         color: #b9c9de;
-
         font-size: 14px;
     }
 
     .nav-active {
-
         background:
             linear-gradient(
                 90deg,
@@ -226,70 +192,41 @@ render_html(
     }
 
     .nav-icon {
-
         display: inline-block;
-
         width: 26px;
-
         font-size: 17px;
     }
 
     .sidebar-quote {
-
         margin-top: 150px;
-
-        padding:
-            0
-            10px;
-
+        padding: 0 10px;
         text-align: center;
-
         color: #9aafc9;
-
         font-size: 12px;
-
         line-height: 1.7;
-
         font-style: italic;
     }
-
 
     /* ========================================================
        HEADER
        ======================================================== */
 
     .header {
-
         display: flex;
-
-        justify-content:
-            space-between;
-
-        align-items:
-            flex-start;
-
-        padding:
-            0
-            4px
-            15px
-            4px;
+        justify-content: space-between;
+        align-items: flex-start;
+        padding: 0 4px 15px 4px;
     }
 
     .header-left {
-
         display: flex;
-
         align-items: center;
-
         gap: 15px;
     }
 
     .brain-logo {
-
         width: 85px;
-
         font-size: 66px;
-
         text-align: center;
 
         filter:
@@ -300,24 +237,18 @@ render_html(
     }
 
     .main-title {
-
         font-family:
             'Space Grotesk',
             sans-serif;
 
         font-size: 43px;
-
         font-weight: 800;
-
         line-height: 1;
-
         letter-spacing: -1.5px;
-
         color: #f5f9ff;
     }
 
     .main-title-blue {
-
         color: #1daaff;
 
         text-shadow:
@@ -326,51 +257,34 @@ render_html(
     }
 
     .main-subtitle {
-
         color: #9db8da;
-
         font-size: 24px;
-
         margin-top: 7px;
     }
 
     .main-tags {
-
         color: #99b2d0;
-
         font-size: 13px;
-
         margin-top: 8px;
-
         letter-spacing: .7px;
     }
 
     .header-quote {
-
         color: #d2dbe9;
-
         font-size: 13px;
-
         line-height: 1.8;
-
         text-align: right;
-
         font-style: italic;
-
         padding-right: 4px;
     }
-
 
     /* ========================================================
        METRIC CARDS
        ======================================================== */
 
     .metric-card {
-
         min-height: 108px;
-
         padding: 14px;
-
         border-radius: 11px;
 
         background:
@@ -382,10 +296,7 @@ render_html(
     }
 
     .metric-blue {
-
-        border:
-            1px solid
-            #168cf2;
+        border: 1px solid #168cf2;
 
         box-shadow:
             0 0 18px
@@ -393,10 +304,7 @@ render_html(
     }
 
     .metric-green {
-
-        border:
-            1px solid
-            #16d99a;
+        border: 1px solid #16d99a;
 
         box-shadow:
             0 0 18px
@@ -404,10 +312,7 @@ render_html(
     }
 
     .metric-purple {
-
-        border:
-            1px solid
-            #9655ff;
+        border: 1px solid #9655ff;
 
         box-shadow:
             0 0 18px
@@ -415,10 +320,7 @@ render_html(
     }
 
     .metric-orange {
-
-        border:
-            1px solid
-            #d99938;
+        border: 1px solid #d99938;
 
         box-shadow:
             0 0 18px
@@ -426,96 +328,64 @@ render_html(
     }
 
     .metric-icon {
-
         width: 43px;
-
         height: 43px;
-
         float: left;
-
         margin-right: 12px;
-
         border-radius: 50%;
 
         display: flex;
-
         align-items: center;
-
         justify-content: center;
 
         font-size: 22px;
     }
 
     .blue-icon {
-
-        background:
-            rgba(28, 127, 218, .20);
-
+        background: rgba(28, 127, 218, .20);
         color: #45aaff;
     }
 
     .green-icon {
-
-        background:
-            rgba(18, 202, 133, .20);
-
+        background: rgba(18, 202, 133, .20);
         color: #32e7a3;
     }
 
     .purple-icon {
-
-        background:
-            rgba(142, 67, 231, .22);
-
+        background: rgba(142, 67, 231, .22);
         color: #bd73ff;
     }
 
     .orange-icon {
-
-        background:
-            rgba(215, 139, 26, .22);
-
+        background: rgba(215, 139, 26, .22);
         color: #f4b13a;
     }
 
     .metric-label {
-
         font-size: 13px;
-
         color: #d6dfed;
     }
 
     .metric-value {
-
         font-size: 29px;
-
         font-weight: 700;
-
         line-height: 1.15;
-
         color: #f4f8ff;
-
         margin-top: 3px;
     }
 
     .metric-description {
-
         clear: both;
-
         padding-top: 8px;
-
         font-size: 11px;
-
         color: #96aac4;
     }
-
 
     /* ========================================================
        PANELS
        ======================================================== */
 
     .panel {
-
         background:
             linear-gradient(
                 145deg,
@@ -528,7 +398,6 @@ render_html(
             rgba(81, 128, 172, .25);
 
         border-radius: 12px;
-
         padding: 14px;
 
         box-shadow:
@@ -540,11 +409,8 @@ render_html(
     }
 
     .panel-heading {
-
         display: flex;
-
         align-items: center;
-
         gap: 9px;
 
         font-family:
@@ -552,18 +418,13 @@ render_html(
             sans-serif;
 
         font-size: 18px;
-
         font-weight: 700;
-
         color: #edf4ff;
     }
 
     .panel-icon {
-
         width: 34px;
-
         height: 34px;
-
         border-radius: 7px;
 
         background:
@@ -572,97 +433,60 @@ render_html(
         color: #1ba9ff;
 
         display: flex;
-
         align-items: center;
-
         justify-content: center;
 
         font-size: 18px;
     }
 
     .panel-subtitle {
-
         color: #99acc5;
-
         font-size: 12px;
-
-        margin:
-            3px
-            0
-            13px
-            43px;
+        margin: 3px 0 13px 43px;
     }
-
 
     /* ========================================================
        INPUTS
        ======================================================== */
 
     div[data-baseweb="select"] > div {
-
-        background:
-            #101f32 !important;
-
-        border-color:
-            #30435b !important;
-
-        color:
-            #edf5ff !important;
+        background: #101f32 !important;
+        border-color: #30435b !important;
+        color: #edf5ff !important;
     }
 
     .stTextInput input,
     .stNumberInput input {
-
-        background:
-            #101f32 !important;
-
-        color:
-            #eaf2ff !important;
+        background: #101f32 !important;
+        color: #eaf2ff !important;
     }
 
     .stTextInput > div > div,
     .stNumberInput > div > div {
-
-        background:
-            #101f32 !important;
-
-        border-color:
-            #30435b !important;
+        background: #101f32 !important;
+        border-color: #30435b !important;
     }
 
     .stSelectbox label,
     .stNumberInput label,
     .stTextInput label {
-
-        color:
-            #d8e3f2 !important;
-
-        font-size:
-            12px !important;
+        color: #d8e3f2 !important;
+        font-size: 12px !important;
     }
 
     .stCheckbox label {
-
-        color:
-            #c9d5e7 !important;
-
-        font-size:
-            12px !important;
+        color: #c9d5e7 !important;
+        font-size: 12px !important;
     }
 
-
     /* ========================================================
-       RUN BUTTON
+       BUTTON
        ======================================================== */
 
     .stButton > button {
-
         width: 100%;
-
         min-height: 43px;
-
         border-radius: 8px;
-
         border: none;
 
         background:
@@ -673,7 +497,6 @@ render_html(
             );
 
         color: white;
-
         font-weight: 600;
 
         box-shadow:
@@ -682,135 +505,87 @@ render_html(
     }
 
     .stButton > button:hover {
-
-        transform:
-            translateY(-1px);
+        transform: translateY(-1px);
 
         box-shadow:
             0 0 27px
             rgba(83, 112, 255, .42);
     }
 
-
     /* ========================================================
        RESULT CARDS
        ======================================================== */
 
     .result-card {
-
         min-height: 76px;
-
         padding: 11px;
-
         border-radius: 9px;
-
         margin-bottom: 7px;
     }
 
     .result-green {
-
-        background:
-            rgba(7, 113, 73, .28);
-
-        border:
-            1px solid
-            #13cf87;
+        background: rgba(7, 113, 73, .28);
+        border: 1px solid #13cf87;
     }
 
     .result-blue {
-
-        background:
-            rgba(18, 85, 155, .29);
-
-        border:
-            1px solid
-            #278ff9;
+        background: rgba(18, 85, 155, .29);
+        border: 1px solid #278ff9;
     }
 
     .result-purple {
-
-        background:
-            rgba(101, 46, 158, .30);
-
-        border:
-            1px solid
-            #9c50ff;
+        background: rgba(101, 46, 158, .30);
+        border: 1px solid #9c50ff;
     }
 
     .result-orange {
-
-        background:
-            rgba(132, 81, 24, .30);
-
-        border:
-            1px solid
-            #e19b37;
+        background: rgba(132, 81, 24, .30);
+        border: 1px solid #e19b37;
     }
 
     .result-label {
-
         color: #c9d6e7;
-
         font-size: 11px;
     }
 
     .result-value {
-
         color: #f3f8ff;
-
         font-size: 20px;
-
         font-weight: 700;
-
         margin-top: 3px;
     }
 
-
     /* ========================================================
-       EXECUTION STEPS
+       STEPS
        ======================================================== */
 
     .step {
-
         display: flex;
-
         align-items: center;
-
         min-height: 49px;
     }
 
     .step-number {
-
         width: 31px;
-
         height: 31px;
-
         min-width: 31px;
-
         border-radius: 50%;
 
         display: flex;
-
         align-items: center;
-
         justify-content: center;
 
         margin-right: 12px;
-
         font-weight: 700;
     }
 
     .step-complete {
-
         background: #37df93;
-
         color: #062117;
     }
 
     .step-active {
-
         background: #168cf2;
-
         color: white;
 
         box-shadow:
@@ -819,146 +594,113 @@ render_html(
     }
 
     .step-pending {
-
         background: #718197;
-
         color: white;
     }
 
     .step-content {
-
         flex: 1;
     }
 
     .step-name {
-
         color: #eaf2fc;
-
         font-size: 13px;
     }
 
     .step-description {
-
         color: #879bb7;
-
         font-size: 10px;
-
         margin-top: 2px;
     }
 
     .step-status {
-
         font-size: 16px;
     }
-
 
     /* ========================================================
        LOG
        ======================================================== */
 
     .log-box {
-
-        background:
-            #050e17;
+        background: #050e17;
 
         border:
             1px solid
             #26394e;
 
         border-radius: 7px;
-
         padding: 10px;
 
-        color:
-            #a9c2dd;
+        color: #a9c2dd;
 
         font-family:
             Consolas,
             monospace;
 
         font-size: 10px;
-
         line-height: 1.65;
 
         height: 140px;
-
         overflow-y: auto;
     }
-
 
     /* ========================================================
        JSON
        ======================================================== */
 
     .json-box {
-
-        background:
-            #050e17;
+        background: #050e17;
 
         border:
             1px solid
             #26394e;
 
         border-radius: 7px;
-
         padding: 10px;
 
-        color:
-            #9fd2a8;
+        color: #9fd2a8;
 
         font-family:
             Consolas,
             monospace;
 
         font-size: 10px;
-
         line-height: 1.6;
     }
 
     .json-box pre {
-
         margin: 0;
-
         white-space: pre-wrap;
     }
-
 
     /* ========================================================
        SUCCESS
        ======================================================== */
 
     .success-box {
-
         margin-top: 9px;
-
         padding: 10px;
-
         text-align: center;
-
-        border-radius: 8px;
 
         border:
             1px solid
             #13d489;
 
+        border-radius: 8px;
+
         background:
             rgba(5, 119, 76, .28);
 
-        color:
-            #8df4c5;
-
+        color: #8df4c5;
         font-size: 12px;
     }
-
 
     /* ========================================================
        DATASET STATUS
        ======================================================== */
 
     .dataset-status {
-
         border-radius: 8px;
-
         padding: 8px 10px;
 
         background:
@@ -968,38 +710,29 @@ render_html(
             1px solid
             rgba(30, 147, 244, .22);
 
-        color:
-            #a9c9ec;
-
+        color: #a9c9ec;
         font-size: 11px;
 
         margin-bottom: 10px;
     }
-
 
     /* ========================================================
        FOOTER
        ======================================================== */
 
     .footer {
-
         margin-top: 8px;
-
         padding-top: 8px;
 
         border-top:
             1px solid
             rgba(90, 125, 160, .15);
 
-        color:
-            #879bb5;
-
+        color: #879bb5;
         font-size: 10px;
 
         display: flex;
-
-        justify-content:
-            space-between;
+        justify-content: space-between;
     }
 
     </style>
@@ -1016,18 +749,29 @@ DEFAULTS = {
     "best_accuracy": 96.8,
     "fastest_time": 0.42,
     "average_improvement": 27.5,
+
     "executed": False,
+
     "result_df": None,
+
     "execution_time": 0.63,
+
     "accuracy": 95.6,
+
     "efficiency": 0.92,
+
     "improvement": 28.4,
+
     "analyzed_rows": 0,
+
     "alert_count": 0,
+
     "alert_rate": 0.0,
+
     "logs": [
         "[INFO] Waiting for execution..."
     ],
+
     "last_output": None,
 }
 
@@ -1049,7 +793,7 @@ def find_github_csv_files():
 
         response = requests.get(
             GITHUB_TREE_URL,
-            timeout=30
+            timeout=30,
         )
 
         if response.status_code != 200:
@@ -1062,12 +806,12 @@ def find_github_csv_files():
 
         for item in data.get(
             "tree",
-            []
+            [],
         ):
 
             path = item.get(
                 "path",
-                ""
+                "",
             )
 
             if (
@@ -1099,26 +843,32 @@ def download_github_csv(path):
 
     response = requests.get(
         url,
-        timeout=180
+        timeout=180,
     )
 
     response.raise_for_status()
 
     content = response.content
 
+    # --------------------------------------------------------
     # First attempt
+    # --------------------------------------------------------
+
     try:
 
         return pd.read_csv(
             BytesIO(content),
-            low_memory=False
+            low_memory=False,
         )
 
     except Exception:
 
         pass
 
+    # --------------------------------------------------------
     # Encoding fallback
+    # --------------------------------------------------------
+
     for encoding in [
         "utf-8-sig",
         "utf-8",
@@ -1130,12 +880,12 @@ def download_github_csv(path):
 
             text = content.decode(
                 encoding,
-                errors="replace"
+                errors="replace",
             )
 
             return pd.read_csv(
                 StringIO(text),
-                low_memory=False
+                low_memory=False,
             )
 
         except Exception:
@@ -1148,7 +898,7 @@ def download_github_csv(path):
 
 
 # ============================================================
-# BEST CSV SELECTION
+# CHOOSE BEST CSV
 # ============================================================
 
 def choose_best_csv(csv_files):
@@ -1183,7 +933,7 @@ def choose_best_csv(csv_files):
         scored.append(
             (
                 score,
-                path
+                path,
             )
         )
 
@@ -1203,7 +953,11 @@ def load_dataset():
 
     if not csv_files:
 
-        return None, None, []
+        return (
+            None,
+            None,
+            [],
+        )
 
     selected = choose_best_csv(
         csv_files
@@ -1218,7 +972,7 @@ def load_dataset():
         return (
             dataframe,
             selected,
-            csv_files
+            csv_files,
         )
 
     except Exception:
@@ -1226,7 +980,7 @@ def load_dataset():
         return (
             None,
             selected,
-            csv_files
+            csv_files,
         )
 
 
@@ -1264,7 +1018,7 @@ def create_demo_dataset():
             "ip.src":
                 np.random.choice(
                     source_ips,
-                    rows
+                    rows,
                 ),
 
             "ip.dst":
@@ -1277,7 +1031,7 @@ def create_demo_dataset():
                 np.random.randint(
                     60,
                     1500,
-                    rows
+                    rows,
                 ),
 
             "Label":
@@ -1322,7 +1076,7 @@ def normalize_column_name(name):
     return re.sub(
         r"[^a-z0-9]",
         "",
-        str(name).lower()
+        str(name).lower(),
     )
 
 
@@ -1332,7 +1086,7 @@ def normalize_column_name(name):
 
 def detect_column(
     dataframe,
-    candidates
+    candidates,
 ):
 
     normalized = {}
@@ -1383,19 +1137,19 @@ source_col = detect_column(
         "sourceip",
         "srcip",
         "src",
-    ]
+    ],
 )
 
 timestamp_col = detect_column(
     df,
     [
-        "frame.time",
         "frame.time_epoch",
+        "frame.time",
         "timestamp",
         "datetime",
         "date_time",
         "time",
-    ]
+    ],
 )
 
 label_col = detect_column(
@@ -1408,7 +1162,7 @@ label_col = detect_column(
         "attack",
         "category",
         "traffic_type",
-    ]
+    ],
 )
 
 
@@ -1418,97 +1172,179 @@ label_col = detect_column(
 
 def parse_timestamp(series):
 
-    # First attempt
-    parsed = pd.to_datetime(
-        series,
-        errors="coerce",
-        utc=True,
+    original = series.copy()
+
+    # --------------------------------------------------------
+    # Convert object/string values
+    # --------------------------------------------------------
+
+    cleaned = (
+        original
+        .astype(str)
+        .str.strip()
+        .replace(
+            {
+                "nan": np.nan,
+                "None": np.nan,
+                "NaT": np.nan,
+                "": np.nan,
+            }
+        )
     )
 
-    # Numeric epoch fallback
-    failed = parsed.isna()
+    # --------------------------------------------------------
+    # Numeric epoch detection
+    # --------------------------------------------------------
 
-    if failed.any():
+    numeric = pd.to_numeric(
+        cleaned,
+        errors="coerce",
+    )
 
-        numeric = pd.to_numeric(
-            series.loc[failed],
-            errors="coerce",
-        )
+    numeric_ratio = (
+        numeric.notna().mean()
+        if len(numeric) > 0
+        else 0
+    )
 
-        if numeric.notna().any():
+    parsed = pd.Series(
+        pd.NaT,
+        index=series.index,
+        dtype="datetime64[ns, UTC]",
+    )
+
+    if numeric_ratio > 0.80:
+
+        valid_numeric = numeric.dropna()
+
+        if len(valid_numeric) > 0:
 
             median_value = (
-                numeric
-                .dropna()
-                .median()
+                valid_numeric.median()
             )
 
             if median_value > 100000000000:
 
-                numeric_time = pd.to_datetime(
+                parsed_numeric = pd.to_datetime(
                     numeric,
                     unit="ms",
                     errors="coerce",
                     utc=True,
                 )
 
-            else:
+            elif median_value > 100000000:
 
-                numeric_time = pd.to_datetime(
+                parsed_numeric = pd.to_datetime(
                     numeric,
                     unit="s",
                     errors="coerce",
                     utc=True,
                 )
 
-            parsed.loc[failed] = (
-                numeric_time
+            else:
+
+                parsed_numeric = pd.to_datetime(
+                    numeric,
+                    unit="s",
+                    errors="coerce",
+                    utc=True,
+                )
+
+            parsed.loc[
+                parsed_numeric.notna()
+            ] = parsed_numeric[
+                parsed_numeric.notna()
+            ]
+
+    # --------------------------------------------------------
+    # Standard parser
+    # --------------------------------------------------------
+
+    missing = parsed.isna()
+
+    if missing.any():
+
+        try:
+
+            standard = pd.to_datetime(
+                cleaned.loc[missing],
+                errors="coerce",
+                utc=True,
+                format="mixed",
             )
 
-    # String cleanup fallback
-    failed = parsed.isna()
+            parsed.loc[
+                missing
+            ] = standard
 
-    if failed.any():
+        except Exception:
 
-        text_values = (
-            series.loc[failed]
-            .astype(str)
-            .str.strip()
-        )
+            try:
 
-        text_values = (
-            text_values
+                standard = pd.to_datetime(
+                    cleaned.loc[missing],
+                    errors="coerce",
+                    utc=True,
+                )
+
+                parsed.loc[
+                    missing
+                ] = standard
+
+            except Exception:
+
+                pass
+
+    # --------------------------------------------------------
+    # Remove common timezone text and retry
+    # --------------------------------------------------------
+
+    missing = parsed.isna()
+
+    if missing.any():
+
+        retry_values = (
+            cleaned.loc[missing]
             .str.replace(
                 r"\s+UTC$",
                 "",
                 regex=True,
             )
-        )
-
-        text_values = (
-            text_values
             .str.replace(
                 r"\s+GMT$",
                 "",
                 regex=True,
             )
+            .str.replace(
+                r"\s+\(UTC\)$",
+                "",
+                regex=True,
+            )
+            .str.strip()
         )
 
-        string_time = pd.to_datetime(
-            text_values,
-            errors="coerce",
-            utc=True,
-        )
+        try:
 
-        parsed.loc[failed] = (
-            string_time
-        )
+            retry = pd.to_datetime(
+                retry_values,
+                errors="coerce",
+                utc=True,
+                format="mixed",
+            )
+
+            parsed.loc[
+                missing
+            ] = retry
+
+        except Exception:
+
+            pass
 
     return parsed
 
 
 # ============================================================
-# SAI PREPARATION
+# PREPARE SAI DATA
 # ============================================================
 
 def prepare_sai_data(
@@ -1519,21 +1355,78 @@ def prepare_sai_data(
 
     data = dataframe.copy()
 
+    # --------------------------------------------------------
+    # Always create required SAI columns.
+    # This prevents KeyError in all situations.
+    # --------------------------------------------------------
+
+    data["sai_iat"] = np.nan
+
+    data["sai_gap_bucket"] = pd.Series(
+        dtype="float64"
+    )
+
+    data["sai_repeat_count"] = pd.Series(
+        dtype="float64"
+    )
+
+    data["sai_pattern_ratio"] = pd.Series(
+        dtype="float64"
+    )
+
+    data["sai_score"] = pd.Series(
+        dtype="float64"
+    )
+
+    data["SAI Alert"] = pd.Series(
+        False,
+        index=data.index,
+        dtype="bool",
+    )
+
+    # --------------------------------------------------------
+    # Source
+    # --------------------------------------------------------
+
     data["_sai_source"] = (
         data[source_column]
         .astype("string")
         .str.strip()
     )
 
+    # --------------------------------------------------------
+    # Timestamp
+    # --------------------------------------------------------
+
     data["_sai_time"] = parse_timestamp(
         data[time_column]
     )
 
-    data = data[
+    # --------------------------------------------------------
+    # Keep only valid source/time
+    # --------------------------------------------------------
+
+    valid_mask = (
         data["_sai_source"].notna()
         &
         data["_sai_time"].notna()
+    )
+
+    data = data.loc[
+        valid_mask
     ].copy()
+
+    # --------------------------------------------------------
+    # If nothing remains, return safely.
+    # --------------------------------------------------------
+
+    if data.empty:
+
+        return data
+
+    # --------------------------------------------------------
+    # Sort
+    # --------------------------------------------------------
 
     data = data.sort_values(
         [
@@ -1545,10 +1438,15 @@ def prepare_sai_data(
         drop=True
     )
 
+    # --------------------------------------------------------
+    # Inter-arrival time
+    # --------------------------------------------------------
+
     data["sai_iat"] = (
         data
         .groupby(
-            "_sai_source"
+            "_sai_source",
+            sort=False,
         )["_sai_time"]
         .diff()
         .dt.total_seconds()
@@ -1573,7 +1471,7 @@ def prepare_sai_data(
 
 
 # ============================================================
-# SAI TIMING PATTERN ALGORITHM
+# SAI ALGORITHM
 # ============================================================
 
 def run_sai_algorithm(
@@ -1593,7 +1491,32 @@ def run_sai_algorithm(
         time_column,
     )
 
-    if len(data) == 0:
+    # --------------------------------------------------------
+    # Empty dataset protection
+    # --------------------------------------------------------
+
+    if data.empty:
+
+        # Guarantee SAI Alert exists.
+        data["sai_gap_bucket"] = pd.Series(
+            dtype="int64"
+        )
+
+        data["sai_repeat_count"] = pd.Series(
+            dtype="int64"
+        )
+
+        data["sai_pattern_ratio"] = pd.Series(
+            dtype="float64"
+        )
+
+        data["sai_score"] = pd.Series(
+            dtype="float64"
+        )
+
+        data["SAI Alert"] = pd.Series(
+            dtype="bool"
+        )
 
         return {
             "data": data,
@@ -1603,41 +1526,58 @@ def run_sai_algorithm(
             "execution_time":
                 time.perf_counter()
                 - start,
-            "threshold": threshold,
+            "threshold":
+                float(threshold),
         }
+
+    # --------------------------------------------------------
+    # Safe epsilon
+    # --------------------------------------------------------
 
     epsilon = max(
         float(epsilon),
         0.000001,
     )
 
+    # --------------------------------------------------------
     # Timing bucket
+    # --------------------------------------------------------
+
     data["sai_gap_bucket"] = (
         data["sai_iat"]
-        / epsilon
+        /
+        epsilon
     ).round().astype(
         "int64"
     )
 
-    # Repetition count
+    # --------------------------------------------------------
+    # Repeated timing pattern
+    # --------------------------------------------------------
+
     data["sai_repeat_count"] = (
         data
         .groupby(
             [
                 "_sai_source",
                 "sai_gap_bucket",
-            ]
+            ],
+            sort=False,
         )["sai_gap_bucket"]
         .transform(
             "count"
         )
     )
 
-    # Number of packets per source
+    # --------------------------------------------------------
+    # Packets per source
+    # --------------------------------------------------------
+
     source_size = (
         data
         .groupby(
-            "_sai_source"
+            "_sai_source",
+            sort=False,
         )["_sai_source"]
         .transform(
             "count"
@@ -1647,7 +1587,10 @@ def run_sai_algorithm(
         )
     )
 
+    # --------------------------------------------------------
     # Pattern ratio
+    # --------------------------------------------------------
+
     data["sai_pattern_ratio"] = (
         data["sai_repeat_count"]
         /
@@ -1656,25 +1599,40 @@ def run_sai_algorithm(
 
     data["sai_pattern_ratio"] = (
         data["sai_pattern_ratio"]
+        .replace(
+            [
+                np.inf,
+                -np.inf,
+            ],
+            np.nan,
+        )
+        .fillna(0)
         .clip(
             0,
-            1
+            1,
         )
     )
 
-    # Sliding window score
+    # --------------------------------------------------------
+    # Sliding-window SAI score
+    # --------------------------------------------------------
+
+    safe_window = max(
+        int(window_size),
+        1,
+    )
+
     data["sai_score"] = (
         data
         .groupby(
-            "_sai_source"
+            "_sai_source",
+            sort=False,
         )["sai_pattern_ratio"]
         .transform(
             lambda values:
                 values
                 .rolling(
-                    window=int(
-                        window_size
-                    ),
+                    window=safe_window,
                     min_periods=1,
                 )
                 .mean()
@@ -1683,18 +1641,32 @@ def run_sai_algorithm(
 
     data["sai_score"] = (
         data["sai_score"]
+        .replace(
+            [
+                np.inf,
+                -np.inf,
+            ],
+            np.nan,
+        )
         .fillna(0)
         .clip(
             0,
-            1
+            1,
         )
     )
 
+    # --------------------------------------------------------
     # Detection
+    # --------------------------------------------------------
+
     data["SAI Alert"] = (
         data["sai_score"]
         >= float(threshold)
-    )
+    ).astype(bool)
+
+    # --------------------------------------------------------
+    # Statistics
+    # --------------------------------------------------------
 
     analyzed_rows = len(data)
 
@@ -1709,7 +1681,7 @@ def run_sai_algorithm(
         *
         100
         if analyzed_rows
-        else 0
+        else 0.0
     )
 
     execution_time = (
@@ -1728,7 +1700,7 @@ def run_sai_algorithm(
         "execution_time":
             execution_time,
         "threshold":
-            threshold,
+            float(threshold),
     }
 
 
@@ -1741,15 +1713,30 @@ def calculate_metrics(
     label_column,
 ):
 
-    if (
-        dataframe is None
-        or
-        label_column is None
-        or
-        label_column not in dataframe.columns
-    ):
+    # --------------------------------------------------------
+    # Safety checks
+    # --------------------------------------------------------
 
+    if dataframe is None:
         return None
+
+    if dataframe.empty:
+        return None
+
+    if label_column is None:
+        return None
+
+    if label_column not in dataframe.columns:
+        return None
+
+    # FIX:
+    # Never access SAI Alert if it doesn't exist.
+    if "SAI Alert" not in dataframe.columns:
+        return None
+
+    # --------------------------------------------------------
+    # Labels
+    # --------------------------------------------------------
 
     labels = (
         dataframe[label_column]
@@ -1757,6 +1744,10 @@ def calculate_metrics(
         .str.strip()
         .str.lower()
     )
+
+    # --------------------------------------------------------
+    # Attack classes
+    # --------------------------------------------------------
 
     attack_keywords = [
         "ddos",
@@ -1771,15 +1762,24 @@ def calculate_metrics(
     actual_attack = labels.apply(
         lambda value:
             any(
-                word in value
-                for word in attack_keywords
+                keyword in value
+                for keyword in attack_keywords
             )
     )
 
+    # --------------------------------------------------------
+    # Prediction
+    # --------------------------------------------------------
+
     predicted_attack = (
         dataframe["SAI Alert"]
+        .fillna(False)
         .astype(bool)
     )
+
+    # --------------------------------------------------------
+    # Confusion matrix
+    # --------------------------------------------------------
 
     tp = int(
         (
@@ -1791,15 +1791,15 @@ def calculate_metrics(
 
     tn = int(
         (
-            ~actual_attack
+            (~actual_attack)
             &
-            ~predicted_attack
+            (~predicted_attack)
         ).sum()
     )
 
     fp = int(
         (
-            ~actual_attack
+            (~actual_attack)
             &
             predicted_attack
         ).sum()
@@ -1809,7 +1809,7 @@ def calculate_metrics(
         (
             actual_attack
             &
-            ~predicted_attack
+            (~predicted_attack)
         ).sum()
     )
 
@@ -1820,15 +1820,23 @@ def calculate_metrics(
         + fn
     )
 
+    # --------------------------------------------------------
+    # Accuracy
+    # --------------------------------------------------------
+
     accuracy = (
         (tp + tn)
         /
         total
         *
         100
-        if total
-        else 0
+        if total > 0
+        else 0.0
     )
+
+    # --------------------------------------------------------
+    # Precision
+    # --------------------------------------------------------
 
     precision = (
         tp
@@ -1836,9 +1844,13 @@ def calculate_metrics(
         (tp + fp)
         *
         100
-        if tp + fp
-        else 0
+        if tp + fp > 0
+        else 0.0
     )
+
+    # --------------------------------------------------------
+    # Recall
+    # --------------------------------------------------------
 
     recall = (
         tp
@@ -1846,9 +1858,13 @@ def calculate_metrics(
         (tp + fn)
         *
         100
-        if tp + fn
-        else 0
+        if tp + fn > 0
+        else 0.0
     )
+
+    # --------------------------------------------------------
+    # F1
+    # --------------------------------------------------------
 
     f1 = (
         2
@@ -1858,8 +1874,8 @@ def calculate_metrics(
         recall
         /
         (precision + recall)
-        if precision + recall
-        else 0
+        if precision + recall > 0
+        else 0.0
     )
 
     return {
@@ -1867,10 +1883,10 @@ def calculate_metrics(
         "TN": tn,
         "FP": fp,
         "FN": fn,
-        "accuracy": accuracy,
-        "precision": precision,
-        "recall": recall,
-        "f1": f1,
+        "accuracy": float(accuracy),
+        "precision": float(precision),
+        "recall": float(recall),
+        "f1": float(f1),
     }
 
 
@@ -2018,7 +2034,7 @@ render_html(
 
 m1, m2, m3, m4 = st.columns(
     4,
-    gap="small"
+    gap="small",
 )
 
 with m1:
@@ -2131,7 +2147,7 @@ with m4:
 
 st.markdown(
     "<br>",
-    unsafe_allow_html=True
+    unsafe_allow_html=True,
 )
 
 
@@ -2155,7 +2171,7 @@ else:
             ✓ GitHub Dataset Loaded:
 
             <b>
-                {dataset_source}
+                {html.escape(str(dataset_source))}
             </b>
 
             &nbsp; | &nbsp;
@@ -2177,7 +2193,7 @@ else:
 
 left, middle, right = st.columns(
     [1.05, 1.05, 1.05],
-    gap="small"
+    gap="small",
 )
 
 
@@ -2290,7 +2306,7 @@ with left:
 
     st.markdown(
         "<br>",
-        unsafe_allow_html=True
+        unsafe_allow_html=True,
     )
 
     run_button = st.button(
@@ -2300,10 +2316,16 @@ with left:
 
 
 # ============================================================
-# EXECUTE ALGORITHM
+# EXECUTE
 # ============================================================
 
 if run_button:
+
+    logs = []
+
+    # --------------------------------------------------------
+    # Validate source column
+    # --------------------------------------------------------
 
     if source_col is None:
 
@@ -2313,6 +2335,10 @@ if run_button:
 
         st.stop()
 
+    # --------------------------------------------------------
+    # Validate timestamp column
+    # --------------------------------------------------------
+
     if timestamp_col is None:
 
         st.error(
@@ -2320,8 +2346,6 @@ if run_button:
         )
 
         st.stop()
-
-    logs = []
 
     logs.append(
         "[INFO] Input data loaded successfully."
@@ -2369,6 +2393,10 @@ if run_button:
         f"[INFO] Threshold: {threshold:.2f}"
     )
 
+    # --------------------------------------------------------
+    # Run SAI
+    # --------------------------------------------------------
+
     result = run_sai_algorithm(
         dataframe=df,
         source_column=source_col,
@@ -2376,6 +2404,11 @@ if run_button:
         window_size=int(window_size),
         epsilon=float(epsilon),
         threshold=float(threshold),
+    )
+
+    logs.append(
+        f"[INFO] Valid timestamp/source rows: "
+        f"{result['analyzed_rows']:,}"
     )
 
     logs.append(
@@ -2401,6 +2434,10 @@ if run_button:
 
     detection_df = result["data"]
 
+    # --------------------------------------------------------
+    # Classification
+    # --------------------------------------------------------
+
     classification = calculate_metrics(
         detection_df,
         label_col,
@@ -2414,19 +2451,20 @@ if run_button:
 
     else:
 
-        accuracy = max(
-            0,
-            100
-            -
-            (
-                result["alert_rate"]
-                * 0.10
-            )
-        )
+        # No valid ground-truth label available.
+        accuracy = 0.0
+
+    # --------------------------------------------------------
+    # Execution time
+    # --------------------------------------------------------
 
     execution_time = (
         result["execution_time"]
     )
+
+    # --------------------------------------------------------
+    # Efficiency
+    # --------------------------------------------------------
 
     efficiency = (
         1
@@ -2446,14 +2484,28 @@ if run_button:
         )
     )
 
+    # --------------------------------------------------------
+    # Baseline comparison
+    # --------------------------------------------------------
+
     baseline_accuracy = 83.0
 
-    improvement = max(
-        0,
-        accuracy
-        -
-        baseline_accuracy
-    )
+    if classification:
+
+        improvement = max(
+            0.0,
+            accuracy
+            -
+            baseline_accuracy,
+        )
+
+    else:
+
+        improvement = 0.0
+
+    # --------------------------------------------------------
+    # Store
+    # --------------------------------------------------------
 
     st.session_state.result_df = (
         detection_df
@@ -2491,7 +2543,12 @@ if run_button:
 
     st.session_state.total_runs += 1
 
-    if accuracy > st.session_state.best_accuracy:
+    if (
+        classification
+        and
+        accuracy >
+        st.session_state.best_accuracy
+    ):
 
         st.session_state.best_accuracy = (
             accuracy
@@ -2503,15 +2560,17 @@ if run_button:
             execution_time
         )
 
-    st.session_state.average_improvement = (
-        (
-            st.session_state.average_improvement
-            +
-            improvement
+    if classification:
+
+        st.session_state.average_improvement = (
+            (
+                st.session_state.average_improvement
+                +
+                improvement
+            )
+            /
+            2
         )
-        /
-        2
-    )
 
     st.session_state.logs = logs
 
@@ -2523,13 +2582,13 @@ if run_button:
         "best_score":
             round(
                 accuracy / 100,
-                4
+                4,
             ),
 
         "execution_time":
             round(
                 execution_time,
-                3
+                3,
             ),
 
         "iterations":
@@ -2544,6 +2603,15 @@ if run_button:
             int(
                 result["alerts"]
             ),
+
+        "alert_rate":
+            round(
+                result["alert_rate"],
+                4,
+            ),
+
+        "threshold":
+            float(threshold),
     }
 
     st.rerun()
@@ -2674,7 +2742,10 @@ with middle:
         )
 
     logs_html = "<br>".join(
-        st.session_state.logs
+        html.escape(
+            str(log)
+        )
+        for log in st.session_state.logs
     )
 
     render_html(
@@ -2805,31 +2876,42 @@ with right:
             "best_score":
                 round(
                     st.session_state.accuracy
-                    / 100,
-                    4
+                    /
+                    100,
+                    4,
                 ),
 
             "execution_time":
                 round(
                     st.session_state.execution_time,
-                    3
+                    3,
                 ),
 
             "iterations":
                 int(iterations),
+
+            "analyzed_rows":
+                int(
+                    st.session_state.analyzed_rows
+                ),
+
+            "sai_alerts":
+                int(
+                    st.session_state.alert_count
+                ),
         }
     )
 
     json_text = json.dumps(
         output,
-        indent=2
+        indent=2,
     )
 
     render_html(
         f"""
         <div class="json-box">
 
-            <pre>{json_text}</pre>
+            <pre>{html.escape(json_text)}</pre>
 
         </div>
         """
@@ -2855,12 +2937,12 @@ with right:
 
 st.markdown(
     "<br>",
-    unsafe_allow_html=True
+    unsafe_allow_html=True,
 )
 
 chart_left, chart_right = st.columns(
     2,
-    gap="small"
+    gap="small",
 )
 
 
@@ -2912,7 +2994,7 @@ with chart_left:
         min(
             st.session_state.execution_time
             * 10,
-            100
+            100,
         ),
 
         st.session_state.efficiency
@@ -3017,12 +3099,12 @@ with chart_right:
 
     iteration_count = min(
         int(iterations),
-        500
+        500,
     )
 
     iteration_values = np.arange(
         1,
-        iteration_count + 1
+        iteration_count + 1,
     )
 
     sai_curve = (
@@ -3062,7 +3144,7 @@ with chart_right:
             mode="lines",
             name="Sai Algorithm",
             line=dict(
-                width=3
+                width=3,
             ),
         )
     )
@@ -3116,7 +3198,7 @@ with chart_right:
 
             range=[
                 0.2,
-                1.0
+                1.0,
             ],
 
             gridcolor=
@@ -3139,7 +3221,7 @@ with chart_right:
 
 st.markdown(
     "<br>",
-    unsafe_allow_html=True
+    unsafe_allow_html=True,
 )
 
 tab1, tab2, tab3, tab4 = st.tabs(
@@ -3153,7 +3235,7 @@ tab1, tab2, tab3, tab4 = st.tabs(
 
 
 # ============================================================
-# OVERVIEW TAB
+# OVERVIEW
 # ============================================================
 
 with tab1:
@@ -3168,14 +3250,14 @@ with tab1:
 
         st.metric(
             "Dataset Rows",
-            f"{len(df):,}"
+            f"{len(df):,}",
         )
 
     with o2:
 
         st.metric(
             "Columns",
-            f"{len(df.columns)}"
+            f"{len(df.columns)}",
         )
 
     with o3:
@@ -3185,7 +3267,7 @@ with tab1:
             source_col
             if source_col
             else
-            "Not detected"
+            "Not detected",
         )
 
     with o4:
@@ -3195,7 +3277,7 @@ with tab1:
             timestamp_col
             if timestamp_col
             else
-            "Not detected"
+            "Not detected",
         )
 
     st.markdown(
@@ -3222,7 +3304,7 @@ with tab1:
 
 
 # ============================================================
-# SAI DETECTION TAB
+# SAI DETECTION
 # ============================================================
 
 with tab2:
@@ -3237,28 +3319,28 @@ with tab2:
 
         st.metric(
             "Analyzed rows",
-            f"{st.session_state.analyzed_rows:,}"
+            f"{st.session_state.analyzed_rows:,}",
         )
 
     with d2:
 
         st.metric(
             "SAI alerts",
-            f"{st.session_state.alert_count:,}"
+            f"{st.session_state.alert_count:,}",
         )
 
     with d3:
 
         st.metric(
             "Alert rate",
-            f"{st.session_state.alert_rate:.2f}%"
+            f"{st.session_state.alert_rate:.2f}%",
         )
 
     with d4:
 
         st.metric(
             "Threshold",
-            f"{threshold:.2f}"
+            f"{threshold:.2f}",
         )
 
     st.markdown(
@@ -3293,7 +3375,7 @@ with tab2:
                 detection
                 .sort_values(
                     "sai_score",
-                    ascending=False
+                    ascending=False,
                 )
                 .head(100)
             )
@@ -3365,12 +3447,19 @@ with tab2:
             "detection results."
         )
 
+    # --------------------------------------------------------
     # Classification metrics
+    # --------------------------------------------------------
+
     if (
         st.session_state.result_df
         is not None
         and
         label_col
+        and
+        "SAI Alert"
+        in
+        st.session_state.result_df.columns
     ):
 
         metrics = calculate_metrics(
@@ -3390,40 +3479,40 @@ with tab2:
 
                 st.metric(
                     "Accuracy",
-                    f"{metrics['accuracy']:.2f}%"
+                    f"{metrics['accuracy']:.2f}%",
                 )
 
             with x2:
 
                 st.metric(
                     "Precision",
-                    f"{metrics['precision']:.2f}%"
+                    f"{metrics['precision']:.2f}%",
                 )
 
             with x3:
 
                 st.metric(
                     "Recall",
-                    f"{metrics['recall']:.2f}%"
+                    f"{metrics['recall']:.2f}%",
                 )
 
             with x4:
 
                 st.metric(
                     "F1 Score",
-                    f"{metrics['f1']:.2f}%"
+                    f"{metrics['f1']:.2f}%",
                 )
 
             with x5:
 
                 st.metric(
                     "True Positives",
-                    f"{metrics['TP']:,}"
+                    f"{metrics['TP']:,}",
                 )
 
 
 # ============================================================
-# DATASET TAB
+# DATASET
 # ============================================================
 
 with tab3:
@@ -3528,7 +3617,7 @@ with tab4:
 
 
 # ============================================================
-# ADDITIONAL VISUALIZATIONS
+# VISUALIZATIONS
 # ============================================================
 
 if (
@@ -3536,6 +3625,14 @@ if (
     and
     st.session_state.result_df
     is not None
+    and
+    len(
+        st.session_state.result_df
+    ) > 0
+    and
+    "sai_score"
+    in
+    st.session_state.result_df.columns
 ):
 
     detection = (
@@ -3544,17 +3641,17 @@ if (
 
     st.markdown(
         "<br>",
-        unsafe_allow_html=True
+        unsafe_allow_html=True,
     )
 
     v1, v2 = st.columns(
         2,
-        gap="small"
+        gap="small",
     )
 
 
     # ========================================================
-    # SAI SCORE DISTRIBUTION
+    # SCORE DISTRIBUTION
     # ========================================================
 
     with v1:
@@ -3607,7 +3704,7 @@ if (
 
 
     # ========================================================
-    # TOP SUSPICIOUS SOURCE IPS
+    # TOP SUSPICIOUS IPS
     # ========================================================
 
     with v2:
