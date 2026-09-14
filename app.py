@@ -745,33 +745,27 @@ render_html(
 # ============================================================
 
 DEFAULTS = {
-    "total_runs": 24,
-    "best_accuracy": 96.8,
-    "fastest_time": 0.42,
-    "average_improvement": 27.5,
+    "total_runs": 0,
+    "best_accuracy": 0.0,
+    "fastest_time": float("inf"),
+    "average_improvement": 0.0,
 
     "executed": False,
-
     "result_df": None,
-
-    "execution_time": 0.63,
-
-    "accuracy": 95.6,
-
-    "efficiency": 0.92,
-
-    "improvement": 28.4,
-
+    "execution_time": 0.0,
+    "accuracy": 0.0,
+    "efficiency": 0.0,
+    "improvement": 0.0,
+    "sai_algorithm_score": 0.0,
+    "same_ms_total_max": 0,
+    "same_ms_ip_max": 0,
+    "same_ms_burst_rows": 0,
     "analyzed_rows": 0,
-
     "alert_count": 0,
-
     "alert_rate": 0.0,
-
     "logs": [
         "[INFO] Waiting for execution..."
     ],
-
     "last_output": None,
 }
 
@@ -1171,174 +1165,75 @@ label_col = detect_column(
 # ============================================================
 
 def parse_timestamp(series):
-
-    original = series.copy()
-
-    # --------------------------------------------------------
-    # Convert object/string values
-    # --------------------------------------------------------
-
+    """Parse packet timestamps from common CSV/network-capture formats."""
     cleaned = (
-        original
-        .astype(str)
-        .str.strip()
-        .replace(
-            {
-                "nan": np.nan,
-                "None": np.nan,
-                "NaT": np.nan,
-                "": np.nan,
-            }
-        )
+        series.copy().astype("string").str.strip().replace({
+            "": pd.NA, "nan": pd.NA, "None": pd.NA, "NaT": pd.NA
+        })
     )
 
-    # --------------------------------------------------------
-    # Numeric epoch detection
-    # --------------------------------------------------------
+    parsed = pd.Series(pd.NaT, index=series.index, dtype="datetime64[ns, UTC]")
 
-    numeric = pd.to_numeric(
-        cleaned,
-        errors="coerce",
-    )
+    # Numeric epoch: automatically select seconds, milliseconds,
+    # microseconds or nanoseconds from the magnitude.
+    numeric = pd.to_numeric(cleaned, errors="coerce")
+    valid_numeric = numeric.dropna()
+    if not valid_numeric.empty:
+        median_value = float(valid_numeric.abs().median())
+        if median_value >= 1e18:
+            unit = "ns"
+        elif median_value >= 1e15:
+            unit = "us"
+        elif median_value >= 1e12:
+            unit = "ms"
+        else:
+            unit = "s"
+        parsed_numeric = pd.to_datetime(numeric, unit=unit, errors="coerce", utc=True)
+        parsed.loc[parsed_numeric.notna()] = parsed_numeric.loc[parsed_numeric.notna()]
 
-    numeric_ratio = (
-        numeric.notna().mean()
-        if len(numeric) > 0
-        else 0
-    )
-
-    parsed = pd.Series(
-        pd.NaT,
-        index=series.index,
-        dtype="datetime64[ns, UTC]",
-    )
-
-    if numeric_ratio > 0.80:
-
-        valid_numeric = numeric.dropna()
-
-        if len(valid_numeric) > 0:
-
-            median_value = (
-                valid_numeric.median()
-            )
-
-            if median_value > 100000000000:
-
-                parsed_numeric = pd.to_datetime(
-                    numeric,
-                    unit="ms",
-                    errors="coerce",
-                    utc=True,
-                )
-
-            elif median_value > 100000000:
-
-                parsed_numeric = pd.to_datetime(
-                    numeric,
-                    unit="s",
-                    errors="coerce",
-                    utc=True,
-                )
-
-            else:
-
-                parsed_numeric = pd.to_datetime(
-                    numeric,
-                    unit="s",
-                    errors="coerce",
-                    utc=True,
-                )
-
-            parsed.loc[
-                parsed_numeric.notna()
-            ] = parsed_numeric[
-                parsed_numeric.notna()
-            ]
-
-    # --------------------------------------------------------
-    # Standard parser
-    # --------------------------------------------------------
-
-    missing = parsed.isna()
-
+    # Normal textual timestamps, including ISO and Wireshark exports.
+    missing = parsed.isna() & cleaned.notna()
     if missing.any():
-
         try:
-
-            standard = pd.to_datetime(
-                cleaned.loc[missing],
-                errors="coerce",
-                utc=True,
-                format="mixed",
+            text_parsed = pd.to_datetime(
+                cleaned.loc[missing], errors="coerce", utc=True, format="mixed"
             )
-
-            parsed.loc[
-                missing
-            ] = standard
-
         except Exception:
+            text_parsed = pd.to_datetime(
+                cleaned.loc[missing], errors="coerce", utc=True
+            )
+        parsed.loc[missing] = text_parsed
 
-            try:
-
-                standard = pd.to_datetime(
-                    cleaned.loc[missing],
-                    errors="coerce",
-                    utc=True,
-                )
-
-                parsed.loc[
-                    missing
-                ] = standard
-
-            except Exception:
-
-                pass
-
-    # --------------------------------------------------------
-    # Remove common timezone text and retry
-    # --------------------------------------------------------
-
-    missing = parsed.isna()
-
+    # Remove timezone abbreviations that pandas/dateutil may reject.
+    missing = parsed.isna() & cleaned.notna()
     if missing.any():
-
-        retry_values = (
+        retry = (
             cleaned.loc[missing]
-            .str.replace(
-                r"\s+UTC$",
-                "",
-                regex=True,
-            )
-            .str.replace(
-                r"\s+GMT$",
-                "",
-                regex=True,
-            )
-            .str.replace(
-                r"\s+\(UTC\)$",
-                "",
-                regex=True,
-            )
+            .str.replace(r"\s*\(?(?:UTC|GMT|IST)\)?$", "", regex=True, case=False)
             .str.strip()
         )
-
         try:
-
-            retry = pd.to_datetime(
-                retry_values,
-                errors="coerce",
-                utc=True,
-                format="mixed",
+            retry_parsed = pd.to_datetime(
+                retry, errors="coerce", utc=True, format="mixed"
             )
-
-            parsed.loc[
-                missing
-            ] = retry
-
         except Exception:
+            retry_parsed = pd.to_datetime(retry, errors="coerce", utc=True)
+        parsed.loc[missing] = retry_parsed
 
-            pass
+    # Last fallback: extract a datetime substring from verbose packet text.
+    missing = parsed.isna() & cleaned.notna()
+    if missing.any():
+        extracted = cleaned.loc[missing].str.extract(
+            r"((?:\d{4}[-/]\d{1,2}[-/]\d{1,2}|[A-Za-z]{3,9}\s+\d{1,2},?\s+\d{4})[^,;|]*)",
+            expand=False,
+        )
+        try:
+            extracted_parsed = pd.to_datetime(
+                extracted, errors="coerce", utc=True, format="mixed"
+            )
+        except Exception:
+            extracted_parsed = pd.to_datetime(extracted, errors="coerce", utc=True)
+        parsed.loc[missing] = extracted_parsed
 
     return parsed
 
@@ -1439,6 +1334,29 @@ def prepare_sai_data(
     )
 
     # --------------------------------------------------------
+    # Same-millisecond traffic analysis
+    # --------------------------------------------------------
+    data["sai_millisecond"] = data["_sai_time"].dt.floor("ms")
+
+    data["same_ms_request_count"] = (
+        data.groupby("sai_millisecond", sort=False)["sai_millisecond"]
+        .transform("size")
+        .astype("int64")
+    )
+
+    data["same_ms_ip_request_count"] = (
+        data.groupby(
+            ["_sai_source", "sai_millisecond"], sort=False
+        )["sai_millisecond"]
+        .transform("size")
+        .astype("int64")
+    )
+
+    data["same_ms_ip_burst"] = (
+        data["same_ms_ip_request_count"] >= 2
+    ).astype(bool)
+
+    # --------------------------------------------------------
     # Inter-arrival time
     # --------------------------------------------------------
 
@@ -1528,6 +1446,9 @@ def run_sai_algorithm(
                 - start,
             "threshold":
                 float(threshold),
+            "same_ms_total_max": 0,
+            "same_ms_ip_max": 0,
+            "same_ms_burst_rows": 0,
         }
 
     # --------------------------------------------------------
@@ -1689,6 +1610,10 @@ def run_sai_algorithm(
         - start
     )
 
+    same_ms_total_max = int(data["same_ms_request_count"].max()) if len(data) else 0
+    same_ms_ip_max = int(data["same_ms_ip_request_count"].max()) if len(data) else 0
+    same_ms_burst_rows = int(data["same_ms_ip_burst"].sum()) if len(data) else 0
+
     return {
         "data": data,
         "analyzed_rows":
@@ -1701,6 +1626,9 @@ def run_sai_algorithm(
             execution_time,
         "threshold":
             float(threshold),
+        "same_ms_total_max": same_ms_total_max,
+        "same_ms_ip_max": same_ms_ip_max,
+        "same_ms_burst_rows": same_ms_burst_rows,
     }
 
 
@@ -2106,7 +2034,7 @@ with m3:
             </div>
 
             <div class="metric-value">
-                {st.session_state.fastest_time:.2f} s
+                {(st.session_state.fastest_time if np.isfinite(st.session_state.fastest_time) else 0.0):.2f} s
             </div>
 
             <div class="metric-description">
@@ -2429,6 +2357,16 @@ if run_button:
     )
 
     logs.append(
+        f"[INFO] Max requests in one millisecond: "
+        f"{result['same_ms_total_max']:,}"
+    )
+
+    logs.append(
+        f"[INFO] Max same-IP requests in one millisecond: "
+        f"{result['same_ms_ip_max']:,}"
+    )
+
+    logs.append(
         "[INFO] Result generation completed."
     )
 
@@ -2504,6 +2442,18 @@ if run_button:
         improvement = 0.0
 
     # --------------------------------------------------------
+    # Actual SAI algorithm score
+    # --------------------------------------------------------
+    if classification:
+        sai_algorithm_score = float(accuracy)
+    elif len(detection_df) > 0 and "sai_score" in detection_df.columns:
+        sai_algorithm_score = float(
+            detection_df["sai_score"].fillna(0).mean() * 100
+        )
+    else:
+        sai_algorithm_score = 0.0
+
+    # --------------------------------------------------------
     # Store
     # --------------------------------------------------------
 
@@ -2528,6 +2478,14 @@ if run_button:
     st.session_state.improvement = (
         improvement
     )
+
+    st.session_state.sai_algorithm_score = (
+        sai_algorithm_score
+    )
+
+    st.session_state.same_ms_total_max = result["same_ms_total_max"]
+    st.session_state.same_ms_ip_max = result["same_ms_ip_max"]
+    st.session_state.same_ms_burst_rows = result["same_ms_burst_rows"]
 
     st.session_state.analyzed_rows = (
         result["analyzed_rows"]
@@ -2974,8 +2932,14 @@ with chart_left:
         """
     )
 
+    has_actual_labels = (
+        label_col is not None
+        and st.session_state.result_df is not None
+        and not st.session_state.result_df.empty
+    )
+
     categories = [
-        "Accuracy (%)",
+        "Accuracy (%)" if has_actual_labels else "SAI Score (%)",
         "Execution Time (s)",
         "Efficiency (%)",
         "Improvement (%)",
@@ -2989,17 +2953,9 @@ with chart_left:
     ]
 
     sai_values = [
-        st.session_state.accuracy,
-
-        min(
-            st.session_state.execution_time
-            * 10,
-            100,
-        ),
-
-        st.session_state.efficiency
-        * 100,
-
+        st.session_state.sai_algorithm_score,
+        st.session_state.execution_time,
+        st.session_state.efficiency * 100,
         st.session_state.improvement,
     ]
 
@@ -3010,6 +2966,7 @@ with chart_left:
             name="Existing Algorithm",
             x=categories,
             y=existing,
+            marker_color="#0B79D0",
         )
     )
 
@@ -3018,6 +2975,7 @@ with chart_left:
             name="Sai Algorithm",
             x=categories,
             y=sai_values,
+            marker_color="#7FC8FF",
         )
     )
 
@@ -3107,33 +3065,31 @@ with chart_right:
         iteration_count + 1,
     )
 
-    sai_curve = (
-        0.20
-        +
-        0.76
-        *
-        (
-            1
-            -
-            np.exp(
-                -iteration_values / 8
-            )
+    if (
+        st.session_state.result_df is not None
+        and not st.session_state.result_df.empty
+        and "sai_score" in st.session_state.result_df.columns
+    ):
+        actual_scores = (
+            st.session_state.result_df["sai_score"]
+            .fillna(0)
+            .to_numpy(dtype=float)
         )
-    )
+        actual_best = np.maximum.accumulate(actual_scores)
+        if len(actual_best) == 1:
+            sai_curve = np.repeat(actual_best[0], iteration_count)
+        else:
+            source_x = np.linspace(1, iteration_count, len(actual_best))
+            sai_curve = np.interp(
+                iteration_values,
+                source_x,
+                actual_best,
+            )
+        sai_curve = np.clip(sai_curve, 0.0, 1.0)
+    else:
+        sai_curve = np.zeros(iteration_count)
 
-    existing_curve = (
-        0.20
-        +
-        0.55
-        *
-        (
-            1
-            -
-            np.exp(
-                -iteration_values / 15
-            )
-        )
-    )
+    existing_curve = np.repeat(83.0 / 100.0, iteration_count)
 
     fig2 = go.Figure()
 
@@ -3445,6 +3401,62 @@ with tab2:
         st.info(
             "Click 'Run Sai Algorithm' to generate "
             "detection results."
+        )
+
+    # --------------------------------------------------------
+    # Same-millisecond traffic
+    # --------------------------------------------------------
+    st.markdown("### Same-Millisecond Traffic")
+
+    if (
+        st.session_state.result_df is not None
+        and not st.session_state.result_df.empty
+        and "sai_millisecond" in st.session_state.result_df.columns
+    ):
+        same_ms = st.session_state.result_df.copy()
+        same_ms_summary = (
+            same_ms.groupby("sai_millisecond", as_index=False)
+            .agg(
+                Requests=("sai_millisecond", "size"),
+                Source_IPs=("_sai_source", "nunique"),
+                Max_Same_IP=("same_ms_ip_request_count", "max"),
+            )
+            .sort_values(
+                ["Requests", "Max_Same_IP"],
+                ascending=False,
+            )
+            .head(100)
+        )
+
+        sm1, sm2, sm3 = st.columns(3)
+        with sm1:
+            st.metric(
+                "Max Requests / Millisecond",
+                f"{st.session_state.same_ms_total_max:,}",
+            )
+        with sm2:
+            st.metric(
+                "Max Same-IP / Millisecond",
+                f"{st.session_state.same_ms_ip_max:,}",
+            )
+        with sm3:
+            st.metric(
+                "Same-IP Burst Rows",
+                f"{st.session_state.same_ms_burst_rows:,}",
+            )
+
+        display_same_ms = same_ms_summary.copy()
+        display_same_ms["sai_millisecond"] = display_same_ms[
+            "sai_millisecond"
+        ].astype(str)
+        st.dataframe(
+            display_same_ms,
+            use_container_width=True,
+            height=300,
+        )
+    else:
+        st.info(
+            "Run the SAI Algorithm to calculate same-millisecond request counts."
         )
 
     # --------------------------------------------------------
