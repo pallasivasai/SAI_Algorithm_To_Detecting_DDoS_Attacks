@@ -6,24 +6,26 @@ import time
 import json
 import re
 
-from io import BytesIO
+from io import BytesIO, StringIO
 from textwrap import dedent
+
+import plotly.graph_objects as go
 
 
 # ============================================================
-# PAGE CONFIGURATION
+# PAGE CONFIG
 # ============================================================
 
 st.set_page_config(
     page_title="SAI Algorithm | Interactive Research Prototype",
     page_icon="🧠",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="expanded",
 )
 
 
 # ============================================================
-# GITHUB CONFIGURATION
+# GITHUB DATASET CONFIG
 # ============================================================
 
 GITHUB_REPOSITORY = (
@@ -47,20 +49,27 @@ GITHUB_RAW_BASE = (
 
 
 # ============================================================
-# HTML RENDER HELPER
-# IMPORTANT: prevents HTML appearing as source code
+# HTML RENDERER
+# THIS IS THE IMPORTANT FIX
 # ============================================================
 
 def render_html(content):
+    """
+    Render HTML directly.
 
-    st.markdown(
-        dedent(content).strip(),
-        unsafe_allow_html=True
+    IMPORTANT:
+    Do NOT use st.markdown() for our custom HTML.
+    st.html() prevents <div>, <style>, etc. from
+    appearing as source code on the screen.
+    """
+
+    st.html(
+        dedent(content).strip()
     )
 
 
 # ============================================================
-# GLOBAL CSS
+# CUSTOM CSS
 # ============================================================
 
 render_html(
@@ -76,31 +85,34 @@ render_html(
     }
 
     .stApp {
+
         background:
             radial-gradient(
-                circle at 63% 2%,
-                rgba(0, 173, 255, 0.12),
-                transparent 25%
+                circle at 60% 0%,
+                rgba(0, 174, 255, 0.12),
+                transparent 27%
             ),
             radial-gradient(
-                circle at 90% 48%,
-                rgba(130, 65, 255, 0.08),
+                circle at 90% 50%,
+                rgba(133, 70, 255, 0.08),
                 transparent 25%
             ),
             linear-gradient(
                 135deg,
-                #06101e 0%,
+                #06101d 0%,
                 #071525 50%,
                 #06111f 100%
             );
 
-        color: #eaf2ff;
+        color: #edf5ff;
     }
 
     .block-container {
+
         max-width: 100%;
+
         padding-top: 1rem;
-        padding-bottom: 0.5rem;
+        padding-bottom: .5rem;
         padding-left: 1rem;
         padding-right: 1rem;
     }
@@ -115,63 +127,61 @@ render_html(
         background:
             linear-gradient(
                 180deg,
-                #10213b 0%,
-                #0c1a30 50%,
+                #10223d 0%,
+                #0b1a2f 52%,
                 #081525 100%
             );
 
         border-right:
             1px solid
-            rgba(80, 150, 220, .15);
+            rgba(74, 137, 197, .18);
     }
 
     section[data-testid="stSidebar"] > div {
-        padding-top: .5rem;
+
+        padding-top: .6rem;
     }
 
     .sidebar-logo {
+
         text-align: center;
-        padding: 5px 5px 20px 5px;
+
+        padding:
+            5px
+            5px
+            18px
+            5px;
     }
 
     .infinity-logo {
 
-        font-size: 55px;
+        font-size: 58px;
+
         line-height: 1;
 
         font-weight: 800;
 
-        background:
-            linear-gradient(
-                90deg,
-                #36aaff,
-                #875cff
-            );
+        color: #30aaff;
 
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-
-        filter:
-            drop-shadow(
-                0 0 12px
-                rgba(40, 150, 255, .35)
-            );
+        text-shadow:
+            0 0 18px
+            rgba(25, 166, 255, .65);
     }
 
     .sidebar-title {
 
-        color: #eef5ff;
+        color: #f0f6ff;
 
         font-size: 19px;
 
         font-weight: 700;
 
-        margin-top: 8px;
+        margin-top: 7px;
     }
 
     .sidebar-subtitle {
 
-        color: #9db1cd;
+        color: #9eb2cf;
 
         font-size: 12px;
 
@@ -190,7 +200,7 @@ render_html(
 
         border-radius: 9px;
 
-        color: #b9c9df;
+        color: #b9c9de;
 
         font-size: 14px;
     }
@@ -200,26 +210,26 @@ render_html(
         background:
             linear-gradient(
                 90deg,
-                #176fd8,
-                #257fe8
+                #176fd7,
+                #257fe7
             );
 
         border:
             1px solid
-            rgba(66, 161, 255, .65);
+            rgba(70, 163, 255, .65);
 
         color: white;
 
         box-shadow:
-            0 0 20px
-            rgba(30, 120, 240, .22);
+            0 0 22px
+            rgba(35, 125, 240, .22);
     }
 
     .nav-icon {
 
         display: inline-block;
 
-        width: 25px;
+        width: 26px;
 
         font-size: 17px;
     }
@@ -276,16 +286,16 @@ render_html(
 
     .brain-logo {
 
-        width: 88px;
+        width: 85px;
 
-        font-size: 68px;
+        font-size: 66px;
 
         text-align: center;
 
         filter:
             drop-shadow(
-                0 0 18px
-                rgba(0, 180, 255, .55)
+                0 0 19px
+                rgba(0, 185, 255, .55)
             );
     }
 
@@ -301,10 +311,9 @@ render_html(
 
         line-height: 1;
 
-        letter-spacing:
-            -1.5px;
+        letter-spacing: -1.5px;
 
-        color: #f4f8ff;
+        color: #f5f9ff;
     }
 
     .main-title-blue {
@@ -313,12 +322,12 @@ render_html(
 
         text-shadow:
             0 0 20px
-            rgba(30, 170, 255, .20);
+            rgba(30, 170, 255, .25);
     }
 
     .main-subtitle {
 
-        color: #9bb6da;
+        color: #9db8da;
 
         font-size: 24px;
 
@@ -327,7 +336,7 @@ render_html(
 
     .main-tags {
 
-        color: #99b1cf;
+        color: #99b2d0;
 
         font-size: 13px;
 
@@ -338,7 +347,7 @@ render_html(
 
     .header-quote {
 
-        color: #d4dce9;
+        color: #d2dbe9;
 
         font-size: 13px;
 
@@ -353,22 +362,21 @@ render_html(
 
 
     /* ========================================================
-       TOP METRICS
+       METRIC CARDS
        ======================================================== */
 
     .metric-card {
 
         min-height: 108px;
 
-        padding:
-            14px;
+        padding: 14px;
 
         border-radius: 11px;
 
         background:
             linear-gradient(
                 145deg,
-                rgba(13, 33, 55, .98),
+                rgba(14, 35, 58, .98),
                 rgba(6, 20, 35, .98)
             );
     }
@@ -597,6 +605,9 @@ render_html(
 
         border-color:
             #30435b !important;
+
+        color:
+            #edf5ff !important;
     }
 
     .stTextInput input,
@@ -641,7 +652,7 @@ render_html(
 
 
     /* ========================================================
-       BUTTON
+       RUN BUTTON
        ======================================================== */
 
     .stButton > button {
@@ -692,6 +703,8 @@ render_html(
         padding: 11px;
 
         border-radius: 9px;
+
+        margin-bottom: 7px;
     }
 
     .result-green {
@@ -763,7 +776,7 @@ render_html(
 
         align-items: center;
 
-        min-height: 48px;
+        min-height: 49px;
     }
 
     .step-number {
@@ -796,13 +809,13 @@ render_html(
 
     .step-active {
 
-        background: #37df93;
+        background: #168cf2;
 
-        color: #062117;
+        color: white;
 
         box-shadow:
             0 0 14px
-            rgba(55, 223, 147, .22);
+            rgba(55, 150, 255, .28);
     }
 
     .step-pending {
@@ -902,6 +915,13 @@ render_html(
         line-height: 1.6;
     }
 
+    .json-box pre {
+
+        margin: 0;
+
+        white-space: pre-wrap;
+    }
+
 
     /* ========================================================
        SUCCESS
@@ -991,56 +1011,35 @@ render_html(
 # SESSION STATE
 # ============================================================
 
-if "total_runs" not in st.session_state:
-    st.session_state.total_runs = 24
-
-if "best_accuracy" not in st.session_state:
-    st.session_state.best_accuracy = 96.8
-
-if "fastest_time" not in st.session_state:
-    st.session_state.fastest_time = 0.42
-
-if "average_improvement" not in st.session_state:
-    st.session_state.average_improvement = 27.5
-
-if "executed" not in st.session_state:
-    st.session_state.executed = False
-
-if "result_df" not in st.session_state:
-    st.session_state.result_df = None
-
-if "execution_time" not in st.session_state:
-    st.session_state.execution_time = 0.63
-
-if "accuracy" not in st.session_state:
-    st.session_state.accuracy = 95.6
-
-if "efficiency" not in st.session_state:
-    st.session_state.efficiency = 0.92
-
-if "improvement" not in st.session_state:
-    st.session_state.improvement = 28.4
-
-if "analyzed_rows" not in st.session_state:
-    st.session_state.analyzed_rows = 0
-
-if "alert_count" not in st.session_state:
-    st.session_state.alert_count = 0
-
-if "alert_rate" not in st.session_state:
-    st.session_state.alert_rate = 0.0
-
-if "logs" not in st.session_state:
-    st.session_state.logs = [
+DEFAULTS = {
+    "total_runs": 24,
+    "best_accuracy": 96.8,
+    "fastest_time": 0.42,
+    "average_improvement": 27.5,
+    "executed": False,
+    "result_df": None,
+    "execution_time": 0.63,
+    "accuracy": 95.6,
+    "efficiency": 0.92,
+    "improvement": 28.4,
+    "analyzed_rows": 0,
+    "alert_count": 0,
+    "alert_rate": 0.0,
+    "logs": [
         "[INFO] Waiting for execution..."
-    ]
+    ],
+    "last_output": None,
+}
 
-if "last_output" not in st.session_state:
-    st.session_state.last_output = None
+for key, value in DEFAULTS.items():
+
+    if key not in st.session_state:
+
+        st.session_state[key] = value
 
 
 # ============================================================
-# GITHUB CSV SEARCH
+# GITHUB CSV DISCOVERY
 # ============================================================
 
 @st.cache_data(ttl=300)
@@ -1054,6 +1053,7 @@ def find_github_csv_files():
         )
 
         if response.status_code != 200:
+
             return []
 
         data = response.json()
@@ -1106,7 +1106,7 @@ def download_github_csv(path):
 
     content = response.content
 
-    # UTF-8
+    # First attempt
     try:
 
         return pd.read_csv(
@@ -1121,8 +1121,9 @@ def download_github_csv(path):
     # Encoding fallback
     for encoding in [
         "utf-8-sig",
+        "utf-8",
         "latin1",
-        "cp1252"
+        "cp1252",
     ]:
 
         try:
@@ -1131,8 +1132,6 @@ def download_github_csv(path):
                 encoding,
                 errors="replace"
             )
-
-            from io import StringIO
 
             return pd.read_csv(
                 StringIO(text),
@@ -1144,17 +1143,18 @@ def download_github_csv(path):
             continue
 
     raise ValueError(
-        "Unable to read CSV."
+        "Unable to read CSV file."
     )
 
 
 # ============================================================
-# CHOOSE BEST CSV
+# BEST CSV SELECTION
 # ============================================================
 
 def choose_best_csv(csv_files):
 
     if not csv_files:
+
         return None
 
     scored = []
@@ -1203,11 +1203,7 @@ def load_dataset():
 
     if not csv_files:
 
-        return (
-            None,
-            None,
-            []
-        )
+        return None, None, []
 
     selected = choose_best_csv(
         csv_files
@@ -1240,7 +1236,7 @@ github_df, github_path, github_csv_files = (
 
 
 # ============================================================
-# DEMO FALLBACK
+# DEMO DATASET
 # ============================================================
 
 def create_demo_dataset():
@@ -1254,13 +1250,13 @@ def create_demo_dataset():
         "192.168.1.20",
         "192.168.1.30",
         "10.0.0.10",
-        "10.0.0.20"
+        "10.0.0.20",
     ]
 
     timestamps = pd.date_range(
         start="2025-01-01",
         periods=rows,
-        freq="s"
+        freq="s",
     )
 
     return pd.DataFrame(
@@ -1288,14 +1284,14 @@ def create_demo_dataset():
                 np.random.choice(
                     [
                         "BENIGN",
-                        "DDoS"
+                        "DDoS",
                     ],
                     rows,
                     p=[
-                        .78,
-                        .22
-                    ]
-                )
+                        0.78,
+                        0.22,
+                    ],
+                ),
         }
     )
 
@@ -1318,7 +1314,7 @@ else:
 
 
 # ============================================================
-# COLUMN DETECTION
+# COLUMN NORMALIZATION
 # ============================================================
 
 def normalize_column_name(name):
@@ -1329,6 +1325,10 @@ def normalize_column_name(name):
         str(name).lower()
     )
 
+
+# ============================================================
+# COLUMN DETECTION
+# ============================================================
 
 def detect_column(
     dataframe,
@@ -1343,7 +1343,7 @@ def detect_column(
             normalize_column_name(column)
         ] = column
 
-    # Exact match
+    # Exact
     for candidate in candidates:
 
         key = normalize_column_name(
@@ -1354,7 +1354,7 @@ def detect_column(
 
             return normalized[key]
 
-    # Partial match
+    # Partial
     for candidate in candidates:
 
         key = normalize_column_name(
@@ -1382,7 +1382,7 @@ source_col = detect_column(
         "source_ip",
         "sourceip",
         "srcip",
-        "src"
+        "src",
     ]
 )
 
@@ -1394,7 +1394,7 @@ timestamp_col = detect_column(
         "timestamp",
         "datetime",
         "date_time",
-        "time"
+        "time",
     ]
 )
 
@@ -1407,7 +1407,7 @@ label_col = detect_column(
         "target",
         "attack",
         "category",
-        "traffic_type"
+        "traffic_type",
     ]
 )
 
@@ -1418,27 +1418,21 @@ label_col = detect_column(
 
 def parse_timestamp(series):
 
-    # --------------------------------------------------------
-    # NORMAL DATETIME
-    # --------------------------------------------------------
-
+    # First attempt
     parsed = pd.to_datetime(
         series,
         errors="coerce",
-        utc=True
+        utc=True,
     )
 
-    # --------------------------------------------------------
-    # NUMERIC EPOCH FALLBACK
-    # --------------------------------------------------------
-
+    # Numeric epoch fallback
     failed = parsed.isna()
 
     if failed.any():
 
         numeric = pd.to_numeric(
             series.loc[failed],
-            errors="coerce"
+            errors="coerce",
         )
 
         if numeric.notna().any():
@@ -1455,7 +1449,7 @@ def parse_timestamp(series):
                     numeric,
                     unit="ms",
                     errors="coerce",
-                    utc=True
+                    utc=True,
                 )
 
             else:
@@ -1464,17 +1458,14 @@ def parse_timestamp(series):
                     numeric,
                     unit="s",
                     errors="coerce",
-                    utc=True
+                    utc=True,
                 )
 
             parsed.loc[failed] = (
                 numeric_time
             )
 
-    # --------------------------------------------------------
-    # STRING FALLBACK
-    # --------------------------------------------------------
-
+    # String cleanup fallback
     failed = parsed.isna()
 
     if failed.any():
@@ -1485,13 +1476,12 @@ def parse_timestamp(series):
             .str.strip()
         )
 
-        # Remove common timezone text problems
         text_values = (
             text_values
             .str.replace(
                 r"\s+UTC$",
                 "",
-                regex=True
+                regex=True,
             )
         )
 
@@ -1500,14 +1490,14 @@ def parse_timestamp(series):
             .str.replace(
                 r"\s+GMT$",
                 "",
-                regex=True
+                regex=True,
             )
         )
 
         string_time = pd.to_datetime(
             text_values,
             errors="coerce",
-            utc=True
+            utc=True,
         )
 
         parsed.loc[failed] = (
@@ -1518,20 +1508,16 @@ def parse_timestamp(series):
 
 
 # ============================================================
-# SAI DATA PREPARATION
+# SAI PREPARATION
 # ============================================================
 
 def prepare_sai_data(
     dataframe,
     source_column,
-    time_column
+    time_column,
 ):
 
     data = dataframe.copy()
-
-    # --------------------------------------------------------
-    # SOURCE IP
-    # --------------------------------------------------------
 
     data["_sai_source"] = (
         data[source_column]
@@ -1539,17 +1525,9 @@ def prepare_sai_data(
         .str.strip()
     )
 
-    # --------------------------------------------------------
-    # TIME
-    # --------------------------------------------------------
-
     data["_sai_time"] = parse_timestamp(
         data[time_column]
     )
-
-    # --------------------------------------------------------
-    # KEEP VALID ROWS ONLY
-    # --------------------------------------------------------
 
     data = data[
         data["_sai_source"].notna()
@@ -1557,23 +1535,15 @@ def prepare_sai_data(
         data["_sai_time"].notna()
     ].copy()
 
-    # --------------------------------------------------------
-    # SORT
-    # --------------------------------------------------------
-
     data = data.sort_values(
         [
             "_sai_source",
-            "_sai_time"
+            "_sai_time",
         ],
-        kind="stable"
+        kind="stable",
     ).reset_index(
         drop=True
     )
-
-    # --------------------------------------------------------
-    # INTER ARRIVAL TIME
-    # --------------------------------------------------------
 
     data["sai_iat"] = (
         data
@@ -1589,12 +1559,14 @@ def prepare_sai_data(
         .replace(
             [
                 np.inf,
-                -np.inf
+                -np.inf,
             ],
-            np.nan
+            np.nan,
         )
         .fillna(0)
-        .clip(lower=0)
+        .clip(
+            lower=0
+        )
     )
 
     return data
@@ -1610,7 +1582,7 @@ def run_sai_algorithm(
     time_column,
     window_size,
     epsilon,
-    threshold
+    threshold,
 ):
 
     start = time.perf_counter()
@@ -1618,45 +1590,28 @@ def run_sai_algorithm(
     data = prepare_sai_data(
         dataframe,
         source_column,
-        time_column
+        time_column,
     )
 
     if len(data) == 0:
 
         return {
-            "data":
-                data,
-
-            "analyzed_rows":
-                0,
-
-            "alerts":
-                0,
-
-            "alert_rate":
-                0.0,
-
+            "data": data,
+            "analyzed_rows": 0,
+            "alerts": 0,
+            "alert_rate": 0.0,
             "execution_time":
                 time.perf_counter()
                 - start,
-
-            "threshold":
-                threshold
+            "threshold": threshold,
         }
-
-    # --------------------------------------------------------
-    # EPSILON
-    # --------------------------------------------------------
 
     epsilon = max(
         float(epsilon),
-        0.000001
+        0.000001,
     )
 
-    # --------------------------------------------------------
-    # TIMING BUCKET
-    # --------------------------------------------------------
-
+    # Timing bucket
     data["sai_gap_bucket"] = (
         data["sai_iat"]
         / epsilon
@@ -1664,52 +1619,50 @@ def run_sai_algorithm(
         "int64"
     )
 
-    # --------------------------------------------------------
-    # REPEATED PATTERN COUNT
-    # --------------------------------------------------------
-
+    # Repetition count
     data["sai_repeat_count"] = (
         data
         .groupby(
             [
                 "_sai_source",
-                "sai_gap_bucket"
+                "sai_gap_bucket",
             ]
         )["sai_gap_bucket"]
-        .transform("count")
+        .transform(
+            "count"
+        )
     )
 
-    # --------------------------------------------------------
-    # SOURCE SIZE
-    # --------------------------------------------------------
-
+    # Number of packets per source
     source_size = (
         data
         .groupby(
             "_sai_source"
         )["_sai_source"]
-        .transform("count")
-        .clip(lower=1)
+        .transform(
+            "count"
+        )
+        .clip(
+            lower=1
+        )
     )
 
-    # --------------------------------------------------------
-    # PATTERN RATIO
-    # --------------------------------------------------------
-
+    # Pattern ratio
     data["sai_pattern_ratio"] = (
         data["sai_repeat_count"]
-        / source_size
+        /
+        source_size
     )
 
     data["sai_pattern_ratio"] = (
         data["sai_pattern_ratio"]
-        .clip(0, 1)
+        .clip(
+            0,
+            1
+        )
     )
 
-    # --------------------------------------------------------
-    # LOCAL WINDOW SCORE
-    # --------------------------------------------------------
-
+    # Sliding window score
     data["sai_score"] = (
         data
         .groupby(
@@ -1719,8 +1672,10 @@ def run_sai_algorithm(
             lambda values:
                 values
                 .rolling(
-                    window=int(window_size),
-                    min_periods=1
+                    window=int(
+                        window_size
+                    ),
+                    min_periods=1,
                 )
                 .mean()
         )
@@ -1729,21 +1684,17 @@ def run_sai_algorithm(
     data["sai_score"] = (
         data["sai_score"]
         .fillna(0)
-        .clip(0, 1)
+        .clip(
+            0,
+            1
+        )
     )
 
-    # --------------------------------------------------------
-    # SAI ALERT
-    # --------------------------------------------------------
-
+    # Detection
     data["SAI Alert"] = (
         data["sai_score"]
         >= float(threshold)
     )
-
-    # --------------------------------------------------------
-    # STATISTICS
-    # --------------------------------------------------------
 
     analyzed_rows = len(data)
 
@@ -1753,8 +1704,10 @@ def run_sai_algorithm(
 
     alert_rate = (
         alerts
-        / analyzed_rows
-        * 100
+        /
+        analyzed_rows
+        *
+        100
         if analyzed_rows
         else 0
     )
@@ -1765,23 +1718,17 @@ def run_sai_algorithm(
     )
 
     return {
-        "data":
-            data,
-
+        "data": data,
         "analyzed_rows":
             analyzed_rows,
-
         "alerts":
             alerts,
-
         "alert_rate":
             alert_rate,
-
         "execution_time":
             execution_time,
-
         "threshold":
-            threshold
+            threshold,
     }
 
 
@@ -1791,7 +1738,7 @@ def run_sai_algorithm(
 
 def calculate_metrics(
     dataframe,
-    label_column
+    label_column,
 ):
 
     if (
@@ -1818,7 +1765,7 @@ def calculate_metrics(
         "malicious",
         "anomaly",
         "botnet",
-        "flood"
+        "flood",
     ]
 
     actual_attack = labels.apply(
@@ -1875,8 +1822,10 @@ def calculate_metrics(
 
     accuracy = (
         (tp + tn)
-        / total
-        * 100
+        /
+        total
+        *
+        100
         if total
         else 0
     )
@@ -1885,7 +1834,8 @@ def calculate_metrics(
         tp
         /
         (tp + fp)
-        * 100
+        *
+        100
         if tp + fp
         else 0
     )
@@ -1894,15 +1844,18 @@ def calculate_metrics(
         tp
         /
         (tp + fn)
-        * 100
+        *
+        100
         if tp + fn
         else 0
     )
 
     f1 = (
         2
-        * precision
-        * recall
+        *
+        precision
+        *
+        recall
         /
         (precision + recall)
         if precision + recall
@@ -1917,7 +1870,7 @@ def calculate_metrics(
         "accuracy": accuracy,
         "precision": precision,
         "recall": recall,
-        "f1": f1
+        "f1": f1,
     }
 
 
@@ -1955,36 +1908,30 @@ with st.sidebar:
         ("♟", "Comparison"),
         ("▥", "Visualizations"),
         ("▤", "Research Paper"),
-        ("ⓘ", "About")
+        ("ⓘ", "About"),
     ]
 
     for icon, name in navigation:
 
-        if name == "Home":
+        active_class = (
+            "nav-active"
+            if name == "Home"
+            else ""
+        )
 
-            render_html(
-                f"""
-                <div class="nav-item nav-active">
-                    <span class="nav-icon">
-                        {icon}
-                    </span>
-                    {name}
-                </div>
-                """
-            )
+        render_html(
+            f"""
+            <div class="nav-item {active_class}">
 
-        else:
+                <span class="nav-icon">
+                    {icon}
+                </span>
 
-            render_html(
-                f"""
-                <div class="nav-item">
-                    <span class="nav-icon">
-                        {icon}
-                    </span>
-                    {name}
-                </div>
-                """
-            )
+                {name}
+
+            </div>
+            """
+        )
 
     render_html(
         """
@@ -2019,10 +1966,13 @@ render_html(
             <div>
 
                 <div class="main-title">
+
                     SAI
+
                     <span class="main-title-blue">
                         ALGORITHM
                     </span>
+
                 </div>
 
                 <div class="main-subtitle">
@@ -2030,13 +1980,18 @@ render_html(
                 </div>
 
                 <div class="main-tags">
+
                     Explore
                     &nbsp; • &nbsp;
+
                     Experiment
                     &nbsp; • &nbsp;
+
                     Analyze
                     &nbsp; • &nbsp;
+
                     Innovate
+
                 </div>
 
             </div>
@@ -2044,9 +1999,12 @@ render_html(
         </div>
 
         <div class="header-quote">
+
             “ From Curiosity<br>
             &nbsp;&nbsp;to Discovery ”<br>
+
             — Sai Algorithm
+
         </div>
 
     </div>
@@ -2055,7 +2013,7 @@ render_html(
 
 
 # ============================================================
-# TOP METRIC CARDS
+# TOP METRICS
 # ============================================================
 
 m1, m2, m3, m4 = st.columns(
@@ -2089,6 +2047,7 @@ with m1:
         """
     )
 
+
 with m2:
 
     render_html(
@@ -2115,6 +2074,7 @@ with m2:
         """
     )
 
+
 with m3:
 
     render_html(
@@ -2140,6 +2100,7 @@ with m3:
         </div>
         """
     )
+
 
 with m4:
 
@@ -2168,7 +2129,10 @@ with m4:
     )
 
 
-st.markdown("<br>", unsafe_allow_html=True)
+st.markdown(
+    "<br>",
+    unsafe_allow_html=True
+)
 
 
 # ============================================================
@@ -2179,7 +2143,7 @@ if using_demo:
 
     st.warning(
         "No CSV was detected in the configured GitHub "
-        "repository. Demo data is being used."
+        "repository. Demo data is currently being used."
     )
 
 else:
@@ -2189,7 +2153,10 @@ else:
         <div class="dataset-status">
 
             ✓ GitHub Dataset Loaded:
-            <b>{dataset_source}</b>
+
+            <b>
+                {dataset_source}
+            </b>
 
             &nbsp; | &nbsp;
 
@@ -2205,7 +2172,7 @@ else:
 
 
 # ============================================================
-# THREE MAIN PANELS
+# MAIN THREE PANELS
 # ============================================================
 
 left, middle, right = st.columns(
@@ -2215,7 +2182,7 @@ left, middle, right = st.columns(
 
 
 # ============================================================
-# 1. INPUT PARAMETERS
+# INPUT PARAMETERS
 # ============================================================
 
 with left:
@@ -2242,28 +2209,31 @@ with left:
         """
     )
 
-    # Dataset selector
     dataset_options = [
         "Sample Data (Default)"
     ]
 
     if github_csv_files:
 
-        dataset_options = (
-            [github_path]
-            if github_path
-            else []
-        )
+        dataset_options = []
 
-        dataset_options += [
-            path
-            for path in github_csv_files
-            if path != github_path
-        ]
+        if github_path:
+
+            dataset_options.append(
+                github_path
+            )
+
+        for path in github_csv_files:
+
+            if path not in dataset_options:
+
+                dataset_options.append(
+                    path
+                )
 
     dataset_choice = st.selectbox(
         "Dataset / Input Type",
-        dataset_options
+        dataset_options,
     )
 
     window_size = st.number_input(
@@ -2271,7 +2241,7 @@ with left:
         min_value=1,
         max_value=10000,
         value=50,
-        step=1
+        step=1,
     )
 
     iterations = st.number_input(
@@ -2279,7 +2249,7 @@ with left:
         min_value=1,
         max_value=10000,
         value=100,
-        step=1
+        step=1,
     )
 
     epsilon = st.number_input(
@@ -2288,7 +2258,7 @@ with left:
         max_value=10.0,
         value=0.01,
         step=0.01,
-        format="%.4f"
+        format="%.4f",
     )
 
     threshold = st.slider(
@@ -2296,7 +2266,7 @@ with left:
         min_value=0.0,
         max_value=1.0,
         value=0.70,
-        step=0.01
+        step=0.01,
     )
 
     st.markdown(
@@ -2305,29 +2275,32 @@ with left:
 
     enable_visualization = st.checkbox(
         "Enable Visualization",
-        value=True
+        value=True,
     )
 
     compare_existing = st.checkbox(
         "Compare with Existing Algorithm",
-        value=True
+        value=True,
     )
 
     show_steps = st.checkbox(
         "Show Step-by-Step Execution",
-        value=False
+        value=False,
     )
 
-    st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown(
+        "<br>",
+        unsafe_allow_html=True
+    )
 
     run_button = st.button(
         "▷  Run Sai Algorithm",
-        use_container_width=True
+        use_container_width=True,
     )
 
 
 # ============================================================
-# EXECUTION
+# EXECUTE ALGORITHM
 # ============================================================
 
 if run_button:
@@ -2396,17 +2369,13 @@ if run_button:
         f"[INFO] Threshold: {threshold:.2f}"
     )
 
-    # --------------------------------------------------------
-    # RUN SAI
-    # --------------------------------------------------------
-
     result = run_sai_algorithm(
         dataframe=df,
         source_column=source_col,
         time_column=timestamp_col,
         window_size=int(window_size),
         epsilon=float(epsilon),
-        threshold=float(threshold)
+        threshold=float(threshold),
     )
 
     logs.append(
@@ -2432,13 +2401,9 @@ if run_button:
 
     detection_df = result["data"]
 
-    # --------------------------------------------------------
-    # ACTUAL CLASSIFICATION
-    # --------------------------------------------------------
-
     classification = calculate_metrics(
         detection_df,
-        label_col
+        label_col,
     )
 
     if classification:
@@ -2449,24 +2414,19 @@ if run_button:
 
     else:
 
-        # Detection-only fallback
         accuracy = max(
             0,
             100
             -
             (
                 result["alert_rate"]
-                * .10
+                * 0.10
             )
         )
 
     execution_time = (
         result["execution_time"]
     )
-
-    # --------------------------------------------------------
-    # EFFICIENCY
-    # --------------------------------------------------------
 
     efficiency = (
         1
@@ -2486,10 +2446,6 @@ if run_button:
         )
     )
 
-    # --------------------------------------------------------
-    # IMPROVEMENT
-    # --------------------------------------------------------
-
     baseline_accuracy = 83.0
 
     improvement = max(
@@ -2498,10 +2454,6 @@ if run_button:
         -
         baseline_accuracy
     )
-
-    # --------------------------------------------------------
-    # SAVE
-    # --------------------------------------------------------
 
     st.session_state.result_df = (
         detection_df
@@ -2557,7 +2509,8 @@ if run_button:
             +
             improvement
         )
-        / 2
+        /
+        2
     )
 
     st.session_state.logs = logs
@@ -2590,14 +2543,14 @@ if run_button:
         "sai_alerts":
             int(
                 result["alerts"]
-            )
+            ),
     }
 
     st.rerun()
 
 
 # ============================================================
-# 2. ALGORITHM EXECUTION
+# ALGORITHM EXECUTION PANEL
 # ============================================================
 
 with middle:
@@ -2628,34 +2581,34 @@ with middle:
         (
             "1",
             "Input Processing",
-            "Loading and validating input data..."
+            "Loading and validating input data...",
         ),
         (
             "2",
             "Initialization",
-            "Setting initial parameters..."
+            "Setting initial parameters...",
         ),
         (
             "3",
             "Core Algorithm Logic",
-            "Running Sai Algorithm..."
+            "Running Sai Algorithm...",
         ),
         (
             "4",
             "Optimization",
-            "Refining results..."
+            "Refining results...",
         ),
         (
             "5",
             "Result Generation",
-            "Finalizing output..."
-        )
+            "Finalizing output...",
+        ),
     ]
 
     for index, (
         number,
         name,
-        description
+        description,
     ) in enumerate(steps):
 
         if st.session_state.executed:
@@ -2734,7 +2687,7 @@ with middle:
 
 
 # ============================================================
-# 3. RESULTS
+# RESULTS PANEL
 # ============================================================
 
 with right:
@@ -2838,8 +2791,7 @@ with right:
         )
 
     st.markdown(
-        "<br><b>Output</b>",
-        unsafe_allow_html=True
+        "**Output**"
     )
 
     output = (
@@ -2864,18 +2816,20 @@ with right:
                 ),
 
             "iterations":
-                int(iterations)
+                int(iterations),
         }
+    )
+
+    json_text = json.dumps(
+        output,
+        indent=2
     )
 
     render_html(
         f"""
         <div class="json-box">
 
-            <pre>{json.dumps(
-                output,
-                indent=2
-            )}</pre>
+            <pre>{json_text}</pre>
 
         </div>
         """
@@ -2886,15 +2840,17 @@ with right:
         render_html(
             """
             <div class="success-box">
+
                 ✓ &nbsp;
                 Algorithm executed successfully!
+
             </div>
             """
         )
 
 
 # ============================================================
-# CHARTS
+# PERFORMANCE COMPARISON + CONVERGENCE
 # ============================================================
 
 st.markdown(
@@ -2906,8 +2862,6 @@ chart_left, chart_right = st.columns(
     2,
     gap="small"
 )
-
-import plotly.graph_objects as go
 
 
 # ============================================================
@@ -2942,14 +2896,14 @@ with chart_left:
         "Accuracy (%)",
         "Execution Time (s)",
         "Efficiency (%)",
-        "Improvement (%)"
+        "Improvement (%)",
     ]
 
     existing = [
         83.0,
         4.0,
         62.0,
-        25.0
+        25.0,
     ]
 
     sai_values = [
@@ -2964,7 +2918,7 @@ with chart_left:
         st.session_state.efficiency
         * 100,
 
-        st.session_state.improvement
+        st.session_state.improvement,
     ]
 
     fig = go.Figure()
@@ -2973,7 +2927,7 @@ with chart_left:
         go.Bar(
             name="Existing Algorithm",
             x=categories,
-            y=existing
+            y=existing,
         )
     )
 
@@ -2981,12 +2935,11 @@ with chart_left:
         go.Bar(
             name="Sai Algorithm",
             x=categories,
-            y=sai_values
+            y=sai_values,
         )
     )
 
     fig.update_layout(
-
         barmode="group",
 
         height=300,
@@ -2995,7 +2948,7 @@ with chart_left:
             l=35,
             r=15,
             t=20,
-            b=55
+            b=55,
         ),
 
         paper_bgcolor="rgba(0,0,0,0)",
@@ -3009,7 +2962,7 @@ with chart_left:
         legend=dict(
             orientation="h",
             y=1.12,
-            x=0
+            x=0,
         ),
 
         xaxis=dict(
@@ -3019,9 +2972,10 @@ with chart_left:
 
         yaxis=dict(
             range=[0, 105],
+
             gridcolor=
                 "rgba(100,140,180,.14)"
-        )
+        ),
     )
 
     st.plotly_chart(
@@ -3029,7 +2983,7 @@ with chart_left:
         use_container_width=True,
         config={
             "displayModeBar": False
-        }
+        },
     )
 
 
@@ -3109,7 +3063,7 @@ with chart_right:
             name="Sai Algorithm",
             line=dict(
                 width=3
-            )
+            ),
         )
     )
 
@@ -3121,20 +3075,19 @@ with chart_right:
             name="Existing Algorithm",
             line=dict(
                 width=2,
-                dash="dash"
-            )
+                dash="dash",
+            ),
         )
     )
 
     fig2.update_layout(
-
         height=300,
 
         margin=dict(
             l=40,
             r=15,
             t=20,
-            b=50
+            b=50,
         ),
 
         paper_bgcolor="rgba(0,0,0,0)",
@@ -3148,21 +3101,27 @@ with chart_right:
         legend=dict(
             orientation="h",
             y=1.12,
-            x=0
+            x=0,
         ),
 
         xaxis=dict(
             title="Iterations",
+
             gridcolor=
                 "rgba(100,140,180,.10)"
         ),
 
         yaxis=dict(
             title="Best Score",
-            range=[0.2, 1.0],
+
+            range=[
+                0.2,
+                1.0
+            ],
+
             gridcolor=
                 "rgba(100,140,180,.14)"
-        )
+        ),
     )
 
     st.plotly_chart(
@@ -3170,7 +3129,7 @@ with chart_right:
         use_container_width=True,
         config={
             "displayModeBar": False
-        }
+        },
     )
 
 
@@ -3188,13 +3147,13 @@ tab1, tab2, tab3, tab4 = st.tabs(
         "📊 Overview",
         "🛡️ SAI Detection",
         "📄 Dataset",
-        "ℹ️ About SAI"
+        "ℹ️ About SAI",
     ]
 )
 
 
 # ============================================================
-# OVERVIEW
+# OVERVIEW TAB
 # ============================================================
 
 with tab1:
@@ -3225,7 +3184,8 @@ with tab1:
             "Source IP",
             source_col
             if source_col
-            else "Not detected"
+            else
+            "Not detected"
         )
 
     with o4:
@@ -3234,7 +3194,8 @@ with tab1:
             "Timestamp",
             timestamp_col
             if timestamp_col
-            else "Not detected"
+            else
+            "Not detected"
         )
 
     st.markdown(
@@ -3270,8 +3231,6 @@ with tab2:
         "SAI Timing-Pattern Detection"
     )
 
-    threshold_display = threshold
-
     d1, d2, d3, d4 = st.columns(4)
 
     with d1:
@@ -3299,7 +3258,7 @@ with tab2:
 
         st.metric(
             "Threshold",
-            f"{threshold_display:.2f}"
+            f"{threshold:.2f}"
         )
 
     st.markdown(
@@ -3327,7 +3286,7 @@ with tab2:
 
             st.info(
                 "No records crossed the current threshold. "
-                "Showing highest SAI scores instead."
+                "Showing the highest SAI scores instead."
             )
 
             suspicious = (
@@ -3355,7 +3314,7 @@ with tab2:
             "sai_repeat_count",
             "sai_pattern_ratio",
             "sai_score",
-            "SAI Alert"
+            "SAI Alert",
         ]
 
         display_columns = [
@@ -3377,7 +3336,7 @@ with tab2:
                 display_columns
             ].head(100),
             use_container_width=True,
-            height=430
+            height=430,
         )
 
         download_data = (
@@ -3396,7 +3355,7 @@ with tab2:
             file_name=(
                 "sai_ddos_detection_results.csv"
             ),
-            mime="text/csv"
+            mime="text/csv",
         )
 
     else:
@@ -3406,10 +3365,7 @@ with tab2:
             "detection results."
         )
 
-    # --------------------------------------------------------
-    # CLASSIFICATION METRICS
-    # --------------------------------------------------------
-
+    # Classification metrics
     if (
         st.session_state.result_df
         is not None
@@ -3419,7 +3375,7 @@ with tab2:
 
         metrics = calculate_metrics(
             st.session_state.result_df,
-            label_col
+            label_col,
         )
 
         if metrics:
@@ -3503,12 +3459,12 @@ with tab3:
     st.dataframe(
         df.head(200),
         use_container_width=True,
-        height=500
+        height=500,
     )
 
 
 # ============================================================
-# ABOUT SAI TAB
+# ABOUT SAI
 # ============================================================
 
 with tab4:
@@ -3525,37 +3481,37 @@ with tab4:
         inter-packet timing patterns originating from the same
         source IP.
 
-        **Processing flow**
+        ### Processing Flow
 
-        Source IP + Timestamp
-
-        ↓
-
-        Sort packets by source and time
+        **Source IP + Timestamp**
 
         ↓
 
-        Calculate inter-arrival time
+        **Sort packets by source and time**
 
         ↓
 
-        Group nearly-equal timing gaps
+        **Calculate inter-arrival time**
 
         ↓
 
-        Measure repetition
+        **Group nearly-equal timing gaps**
 
         ↓
 
-        Calculate SAI score
+        **Measure repetition**
 
         ↓
 
-        Apply detection threshold
+        **Calculate SAI score**
 
         ↓
 
-        Generate SAI alerts
+        **Apply detection threshold**
+
+        ↓
+
+        **Generate SAI alerts**
 
         ---
 
@@ -3596,9 +3552,10 @@ if (
         gap="small"
     )
 
-    # --------------------------------------------------------
-    # SCORE DISTRIBUTION
-    # --------------------------------------------------------
+
+    # ========================================================
+    # SAI SCORE DISTRIBUTION
+    # ========================================================
 
     with v1:
 
@@ -3610,27 +3567,34 @@ if (
 
         fig_score.add_trace(
             go.Histogram(
-                x=detection["sai_score"],
+                x=detection[
+                    "sai_score"
+                ],
                 nbinsx=30,
-                name="SAI Score"
+                name="SAI Score",
             )
         )
 
         fig_score.add_vline(
             x=threshold,
             line_dash="dash",
-            annotation_text="Threshold"
+            annotation_text="Threshold",
         )
 
         fig_score.update_layout(
             height=330,
+
             paper_bgcolor="rgba(0,0,0,0)",
+
             plot_bgcolor="rgba(0,0,0,0)",
+
             font=dict(
                 color="#b8c8dc"
             ),
+
             xaxis_title="SAI Score",
-            yaxis_title="Records"
+
+            yaxis_title="Records",
         )
 
         st.plotly_chart(
@@ -3638,13 +3602,13 @@ if (
             use_container_width=True,
             config={
                 "displayModeBar": False
-            }
+            },
         )
 
 
-    # --------------------------------------------------------
-    # TOP SOURCE IPs
-    # --------------------------------------------------------
+    # ========================================================
+    # TOP SUSPICIOUS SOURCE IPS
+    # ========================================================
 
     with v2:
 
@@ -3673,19 +3637,24 @@ if (
                     x=top_ips.values,
                     y=top_ips.index,
                     orientation="h",
-                    name="Alerts"
+                    name="Alerts",
                 )
             )
 
             fig_ip.update_layout(
                 height=330,
+
                 paper_bgcolor="rgba(0,0,0,0)",
+
                 plot_bgcolor="rgba(0,0,0,0)",
+
                 font=dict(
                     color="#b8c8dc"
                 ),
+
                 xaxis_title="SAI Alerts",
-                yaxis_title="Source IP"
+
+                yaxis_title="Source IP",
             )
 
             st.plotly_chart(
@@ -3693,7 +3662,7 @@ if (
                 use_container_width=True,
                 config={
                     "displayModeBar": False
-                }
+                },
             )
 
 
@@ -3706,13 +3675,19 @@ render_html(
     <div class="footer">
 
         <div>
+
             © 2025 Sai Algorithm
+
             &nbsp; | &nbsp;
+
             Research Prototype
+
         </div>
 
         <div>
+
             Explore Ideas. Build the Future.
+
         </div>
 
     </div>
